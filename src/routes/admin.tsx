@@ -145,7 +145,7 @@ function Admin() {
           onClick={() => setDsdpOpen(true)}
           className="inline-flex items-center gap-2 rounded-xl border border-emerald-800/30 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100 dark:border-emerald-300/30 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
         >
-          <FileText className="h-4 w-4" /> DSDP Policy Memo
+          <FileText className="h-4 w-4" /> Export District Action Report
         </button>
       </section>
       <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
