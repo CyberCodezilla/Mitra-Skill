@@ -1,7 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
-import { Phone, X } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { BookOpen, Moon, Phone, Shield, Sun, X } from "lucide-react";
 import { useApp } from "@/lib/app-context";
+import { useTour } from "@/context/TourContext";
+import { PlatformTour } from "@/components/common/PlatformTour";
 
 function Crest() {
   return (
@@ -11,7 +13,11 @@ function Crest() {
         <circle cx="12" cy="12" r="1.6" fill="currentColor" />
         {Array.from({ length: 24 }).map((_, i) => {
           const a = (i * Math.PI) / 12;
-          return <line key={i} x1={12} y1={12} x2={12 + 9 * Math.cos(a)} y2={12 + 9 * Math.sin(a)} stroke="currentColor" strokeWidth="0.5" />;
+          const x = (12 + 9 * Math.cos(a)).toFixed(4);
+          const y = (12 + 9 * Math.sin(a)).toFixed(4);
+          return (
+            <line key={i} x1={12} y1={12} x2={x} y2={y} stroke="currentColor" strokeWidth="0.5" />
+          );
         })}
       </svg>
     </div>
@@ -20,9 +26,35 @@ function Crest() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { lang, setLang, t } = useApp();
+  const { start: startTour } = useTour();
   const [open, setOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const active = path.startsWith("/mobility") ? 2 : path.startsWith("/counsel") ? 1 : 0;
+  const active = path.startsWith("/admin")
+    ? -1
+    : path.startsWith("/accord")
+      ? 4
+      : path.startsWith("/mobility")
+        ? 2
+        : path.startsWith("/counsel")
+          ? 1
+          : 0;
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("mitraskill_theme");
+    const enabled = saved
+      ? saved === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setDarkMode(enabled);
+    document.documentElement.classList.toggle("dark", enabled);
+  }, []);
+
+  const toggleTheme = () => {
+    const enabled = !darkMode;
+    setDarkMode(enabled);
+    document.documentElement.classList.toggle("dark", enabled);
+    window.localStorage.setItem("mitraskill_theme", enabled ? "dark" : "light");
+  };
 
   return (
     <div lang={lang} className="min-h-screen">
@@ -37,7 +69,37 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </Link>
           <div className="flex items-center gap-2">
-            <div className="flex rounded-full border bg-muted p-1 text-sm font-semibold" role="group" aria-label="Language">
+            <Link
+              to={path.startsWith("/admin") ? "/accord" : "/admin"}
+              data-tour="tour-admin-link"
+              className="inline-flex items-center gap-1.5 rounded-full border border-navy/20 px-2.5 py-2 text-xs font-semibold text-navy transition hover:border-primary sm:px-3"
+            >
+              <Shield className="h-4 w-4" />
+              {path.startsWith("/admin") ? "Family Flow" : "Admin Console"}
+            </Link>
+            <button
+              onClick={startTour}
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-accent/60 px-2.5 py-2 text-xs font-semibold text-navy transition hover:bg-accent sm:px-3"
+              aria-label={lang === "hi" ? "ऐप मार्गदर्शिका शुरू करें" : "Open app guide"}
+            >
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden md:inline">
+                {lang === "hi" ? "मार्गदर्शिका" : "App Guide"}
+              </span>
+            </button>
+            <button
+              onClick={toggleTheme}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border bg-card text-navy transition hover:border-primary"
+              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              title={darkMode ? "Light mode" : "Dark mode"}
+            >
+              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+            <div
+              className="flex rounded-full border bg-muted p-1 text-sm font-semibold"
+              role="group"
+              aria-label="Language"
+            >
               {(["hi", "en"] as const).map((l) => (
                 <button
                   key={l}
@@ -64,7 +126,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               <li key={s} className="flex shrink-0 items-center gap-1">
                 <span
                   className={`rounded-full px-3 py-1 font-medium ${
-                    i === active ? "bg-primary text-primary-foreground" : i < active ? "bg-accent text-navy" : "text-muted-foreground"
+                    i === active
+                      ? "bg-primary text-primary-foreground"
+                      : i < active
+                        ? "bg-accent text-navy"
+                        : "text-muted-foreground"
                   }`}
                 >
                   {i + 1}. {s}
@@ -79,11 +145,21 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className="pt-36 sm:pt-32">{children}</main>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4" onClick={() => setOpen(false)}>
-          <div role="dialog" aria-modal className="w-full max-w-md rounded-2xl bg-card p-6 shadow-card" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal
+            className="w-full max-w-md rounded-2xl bg-card p-6 shadow-card"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start justify-between">
               <h2 className="text-xl font-bold text-navy">{t.counsellor[lang]}</h2>
-              <button onClick={() => setOpen(false)} aria-label="Close"><X className="h-5 w-5" /></button>
+              <button onClick={() => setOpen(false)} aria-label="Close">
+                <X className="h-5 w-5" />
+              </button>
             </div>
             <p className="mt-4 text-muted-foreground">District Counselor Helpline</p>
             <p className="text-lg font-semibold text-navy">Meerut ITI Nodal Officer</p>
@@ -94,6 +170,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       )}
+      <PlatformTour />
     </div>
   );
 }
