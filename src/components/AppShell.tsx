@@ -4,6 +4,7 @@ import { BookOpen, Moon, Phone, Shield, Sun, X } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { useTour } from "@/context/TourContext";
 import { PlatformTour } from "@/components/common/PlatformTour";
+import { CounselorTriageModal } from "@/components/counsel/CounselorTriageModal";
 
 function Crest() {
   return (
@@ -25,9 +26,10 @@ function Crest() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { lang, setLang, t } = useApp();
+  const { lang, setLang, t, activeTradeName, currentDivergence } = useApp();
   const { start: startTour } = useTour();
   const [open, setOpen] = useState(false);
+  const [legacyPopupEnabled] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
   const active = path.startsWith("/admin")
@@ -144,7 +146,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="pt-36 sm:pt-32">{children}</main>
 
-      {open && (
+      {legacyPopupEnabled && open && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4"
           onClick={() => setOpen(false)}
@@ -170,6 +172,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       )}
+      <CounselorTriageModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        lang={lang}
+        selectedTradeName={activeTradeName}
+        currentDivergence={currentDivergence}
+      />
       <PlatformTour />
     </div>
   );

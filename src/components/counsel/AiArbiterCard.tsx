@@ -42,6 +42,7 @@ export function AiArbiterCard({
   lang,
   onRoi,
   onAlumni,
+  onEscalate,
 }: {
   tradeId: string;
   text: Bi;
@@ -49,14 +50,26 @@ export function AiArbiterCard({
   lang: Lang;
   onRoi: () => void;
   onAlumni: () => void;
+  onEscalate: () => void;
 }) {
   const [playing, setPlaying] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const trade = MOCK_TRADES.find((item) => item.trade_id === tradeId)!;
   const metrics = trade.verified_metrics;
-  const steps = lang === "hi"
-    ? ["छात्र के लक्ष्य को समझना", "परिवार की चिंता पहचानना", "ट्रेड के सत्यापित तथ्य जाँचना", "संतुलित जवाब तैयार करना"]
-    : ["Understand the student's goal", "Identify the family's concern", "Check verified trade evidence", "Shape a balanced response"];
+  const steps =
+    lang === "hi"
+      ? [
+          "छात्र के लक्ष्य को समझना",
+          "परिवार की चिंता पहचानना",
+          "ट्रेड के सत्यापित तथ्य जाँचना",
+          "संतुलित जवाब तैयार करना",
+        ]
+      : [
+          "Understand the student's goal",
+          "Identify the family's concern",
+          "Check verified trade evidence",
+          "Shape a balanced response",
+        ];
 
   useEffect(() => {
     if (!playing) return;
@@ -82,7 +95,10 @@ export function AiArbiterCard({
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <h3 className="text-lg font-bold text-navy">MitraSkill Career Arbiter</h3>
           {isGenerating && (
-            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700" role="status">
+            <span
+              className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700"
+              role="status"
+            >
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-70" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-600" />
@@ -114,7 +130,9 @@ export function AiArbiterCard({
                   {lang === "hi" ? "जवाब देने से पहले" : "Before responding"}
                 </div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
-                  {lang === "hi" ? "दोनों पक्षों और ट्रेड के तथ्यों को साथ देख रहा है" : "Weighing both perspectives against the trade facts"}
+                  {lang === "hi"
+                    ? "दोनों पक्षों और ट्रेड के तथ्यों को साथ देख रहा है"
+                    : "Weighing both perspectives against the trade facts"}
                 </div>
               </div>
               <motion.span
@@ -134,13 +152,22 @@ export function AiArbiterCard({
                 return (
                   <motion.div
                     key={step}
-                    animate={{ opacity: index <= analysisStep ? 1 : 0.46, scale: active ? 1 : 0.99 }}
+                    animate={{
+                      opacity: index <= analysisStep ? 1 : 0.46,
+                      scale: active ? 1 : 0.99,
+                    }}
                     transition={{ duration: 0.25 }}
                     className={`relative flex min-h-11 items-center gap-2.5 overflow-hidden rounded-lg border px-3 py-2 text-xs font-semibold ${active ? "border-indigo-300 bg-white text-indigo-950 shadow-sm" : complete ? "border-emerald-100 bg-emerald-50/70 text-emerald-800" : "border-indigo-100/70 bg-white/50 text-slate-500"}`}
                     aria-current={active ? "step" : undefined}
                   >
-                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${active ? "bg-indigo-100 text-indigo-700" : complete ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                      {complete ? <Check className="h-3.5 w-3.5" /> : <StepIcon className="h-3.5 w-3.5" />}
+                    <span
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${active ? "bg-indigo-100 text-indigo-700" : complete ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
+                    >
+                      {complete ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <StepIcon className="h-3.5 w-3.5" />
+                      )}
                     </span>
                     <span className="relative z-10">{step}</span>
                     {active && (
@@ -206,9 +233,19 @@ export function AiArbiterCard({
         {playing && <Equalizer />}
       </button>
       <div className="mt-5 flex flex-wrap gap-2">
+        <button
+          onClick={onEscalate}
+          disabled={isGenerating}
+          className="flex items-center gap-2 rounded-xl border-2 border-primary/30 bg-accent/50 px-4 py-2 font-medium text-navy transition hover:border-primary hover:bg-accent disabled:opacity-50"
+        >
+          <Users className="h-5 w-5" />{" "}
+          {lang === "hi" ? "जिला काउंसलर से बात करें" : "Escalate to District Counsellor"}
+        </button>
         <Link
           to="/mobility"
-          onClick={(event) => { if (isGenerating) event.preventDefault(); }}
+          onClick={(event) => {
+            if (isGenerating) event.preventDefault();
+          }}
           aria-disabled={isGenerating}
           tabIndex={isGenerating ? -1 : undefined}
           className="flex items-center gap-2 rounded-xl bg-[#E87722] px-4 py-2 font-medium text-white hover:bg-[#d0681a]"

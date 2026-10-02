@@ -46,6 +46,10 @@ type Ctx = {
   setLang: (l: Lang) => void;
   mode: SessionMode;
   setMode: (m: SessionMode) => void;
+  activeTradeName: string;
+  setActiveTradeName: (name: string) => void;
+  currentDivergence: number;
+  setCurrentDivergence: (value: number) => void;
   t: typeof STRINGS;
 };
 
@@ -54,8 +58,22 @@ const AppCtx = createContext<Ctx | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>("en");
   const [mode, setMode] = useState<SessionMode>("JOINT");
+  const [activeTradeName, setActiveTradeName] = useState("Automotive Mechatronics");
+  const [currentDivergence, setCurrentDivergence] = useState(0.42);
   return (
-    <AppCtx.Provider value={{ lang, setLang, mode, setMode, t: STRINGS }}>
+    <AppCtx.Provider
+      value={{
+        lang,
+        setLang,
+        mode,
+        setMode,
+        activeTradeName,
+        setActiveTradeName,
+        currentDivergence,
+        setCurrentDivergence,
+        t: STRINGS,
+      }}
+    >
       {children}
     </AppCtx.Provider>
   );

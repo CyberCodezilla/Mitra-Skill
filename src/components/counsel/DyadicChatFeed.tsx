@@ -16,9 +16,18 @@ type Props = {
   endRef: React.RefObject<HTMLDivElement | null>;
   onRoi: () => void;
   onAlumni: () => void;
+  onEscalate: () => void;
 };
 
-export function DyadicChatFeed({ items, lang, activity, endRef, onRoi, onAlumni }: Props) {
+export function DyadicChatFeed({
+  items,
+  lang,
+  activity,
+  endRef,
+  onRoi,
+  onAlumni,
+  onEscalate,
+}: Props) {
   return (
     <div
       data-tour="tour-chat-feed"
@@ -41,6 +50,7 @@ export function DyadicChatFeed({ items, lang, activity, endRef, onRoi, onAlumni 
                 lang={lang}
                 onRoi={onRoi}
                 onAlumni={onAlumni}
+                onEscalate={onEscalate}
               />
             ) : (
               <ChatBubble kind={message.kind} text={message.text[lang]} lang={lang} />
@@ -63,14 +73,10 @@ export function DyadicChatFeed({ items, lang, activity, endRef, onRoi, onAlumni 
                 lang={lang}
                 onRoi={onRoi}
                 onAlumni={onAlumni}
+                onEscalate={onEscalate}
               />
             ) : (
-              <ChatBubble
-                kind={activity.kind}
-                text={activity.text[lang]}
-                lang={lang}
-                isSending
-              />
+              <ChatBubble kind={activity.kind} text={activity.text[lang]} lang={lang} isSending />
             )}
           </motion.div>
         )}
@@ -118,14 +124,23 @@ function ChatBubble({
               aria-live="polite"
               className="flex min-h-7 items-center gap-2 text-sm text-slate-600"
             >
-              <span>{lang === "hi" ? `${student ? "Aman" : "Ramesh"} कुछ कह रहे हैं…` : `${student ? "Aman" : "Ramesh"} is saying something…`}</span>
+              <span>
+                {lang === "hi"
+                  ? `${student ? "Aman" : "Ramesh"} कुछ कह रहे हैं…`
+                  : `${student ? "Aman" : "Ramesh"} is saying something…`}
+              </span>
               <span className="flex items-center gap-1" aria-hidden="true">
                 {[0, 1, 2].map((dot) => (
                   <motion.span
                     key={dot}
                     className="h-1.5 w-1.5 rounded-full bg-current"
                     animate={{ y: [0, -4, 0], opacity: [0.35, 1, 0.35] }}
-                    transition={{ duration: 0.7, ease: "easeInOut", repeat: Infinity, delay: dot * 0.13 }}
+                    transition={{
+                      duration: 0.7,
+                      ease: "easeInOut",
+                      repeat: Infinity,
+                      delay: dot * 0.13,
+                    }}
                   />
                 ))}
               </span>

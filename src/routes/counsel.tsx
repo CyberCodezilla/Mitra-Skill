@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, MapPin, Scale } from "lucide-react";
+import { ChevronDown, MapPin, Scale, X } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { MOCK_TRADES } from "@/data/mockTrades";
 import { SCRIPTS, type Bi, type ChatItem, type Topic } from "@/data/dialogueScripts";
@@ -8,6 +8,7 @@ import { DyadicChatFeed } from "@/components/counsel/DyadicChatFeed";
 import { SimulationBottomBar } from "@/components/counsel/SimulationBottomBar";
 import { ParentRoiModal } from "@/components/counsel/ParentRoiModal";
 import { AlumniStoryModal } from "@/components/counsel/AlumniStoryModal";
+import { CounselorTriageModal } from "@/components/counsel/CounselorTriageModal";
 
 export const Route = createFileRoute("/counsel")({
   head: () => ({ meta: [{ title: "Dyadic Dialogue | MitraSkill Family Counselling" }] }),
@@ -37,7 +38,7 @@ const opening = (tradeId: string): DialogueEvent[] => {
 };
 
 function Counsel() {
-  const { lang } = useApp();
+  const { lang, setActiveTradeName, setCurrentDivergence } = useApp();
   const [tradeId, setTradeId] = useState("AUTO_MECH_01");
   const [items, setItems] = useState<ChatItem[]>([]);
   const [activity, setActivity] = useState<Activity>(null);
@@ -45,10 +46,25 @@ function Counsel() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [modal, setModal] = useState<"roi" | "alumni" | null>(null);
   const [converged, setConverged] = useState(false);
+  const [counselorOpen, setCounselorOpen] = useState(false);
+  const [objectionClicks, setObjectionClicks] = useState(0);
+  const [mobilityExplored, setMobilityExplored] = useState(false);
+  const [deadlockDismissed, setDeadlockDismissed] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const runId = useRef(0);
   const langRef = useRef(lang);
   langRef.current = lang;
+
+  useEffect(() => {
+    setMobilityExplored(window.sessionStorage.getItem("mitraskill_mobility_explored") === "true");
+  }, []);
+  useEffect(() => {
+    const trade = MOCK_TRADES.find((item) => item.trade_id === tradeId);
+    if (trade) setActiveTradeName(trade.trade_name);
+  }, [tradeId, setActiveTradeName]);
+  useEffect(() => {
+    setCurrentDivergence(converged ? 0.18 : 0.42);
+  }, [converged, setCurrentDivergence]);
 
   const animateEvents = useCallback(async (events: DialogueEvent[]) => {
     const thisRun = ++runId.current;
@@ -58,15 +74,15 @@ function Counsel() {
       const id = messageId();
       const thinkingMs = event.kind === "arbiter" ? 3150 + Math.random() * 450 : 180;
       const characterCount = Array.from(event.text[langRef.current]).length;
-      const messageWaitMs = event.kind === "arbiter"
-        ? 0
-        : Math.min(3400, Math.max(1000, characterCount * 27));
+      const messageWaitMs =
+        event.kind === "arbiter" ? 0 : Math.min(3400, Math.max(1000, characterCount * 27));
       setActivity({ ...event, id, thinkingMs });
       await delay(thinkingMs + messageWaitMs);
       if (thisRun !== runId.current) return;
-      const item: ChatItem = event.kind === "arbiter"
-        ? { id, kind: "arbiter", tradeId: event.tradeId, text: event.text }
-        : { id, kind: event.kind, text: event.text };
+      const item: ChatItem =
+        event.kind === "arbiter"
+          ? { id, kind: "arbiter", tradeId: event.tradeId, text: event.text }
+          : { id, kind: event.kind, text: event.text };
       setItems((current) => [...current, item]);
       setActivity(null);
       await delay(620 + Math.random() * 360);
@@ -139,8 +155,12 @@ function Counsel() {
               className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold text-navy transition hover:bg-muted"
             >
               {detailsOpen
-                ? lang === "hi" ? "विवरण छिपाएँ" : "Hide details"
-                : lang === "hi" ? "ट्रेड और सत्र विवरण" : "Trade & session details"}
+                ? lang === "hi"
+                  ? "विवरण छिपाएँ"
+                  : "Hide details"
+                : lang === "hi"
+                  ? "ट्रेड और सत्र विवरण"
+                  : "Trade & session details"}
               <ChevronDown
                 className={`h-4 w-4 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
               />
@@ -164,7 +184,8 @@ function Counsel() {
                   <MapPin className="h-4 w-4" /> Meerut, UP
                 </span>
                 <span className="flex items-center gap-1 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-navy">
-                  <Scale className="h-4 w-4 text-primary" /> Divergence: {converged ? "0.18" : "0.42"}
+                  <Scale className="h-4 w-4 text-primary" /> Divergence:{" "}
+                  {converged ? "0.18" : "0.42"}
                   <small className="rounded-full bg-primary px-2 py-0.5 text-white">
                     {converged ? "Convergence reached" : "Arbitration active"}
                   </small>
@@ -181,8 +202,59 @@ function Counsel() {
         endRef={endRef}
         onRoi={() => setModal("roi")}
         onAlumni={() => setModal("alumni")}
+        onEscalate={() => setCounselorOpen(true)}
       />
-      <SimulationBottomBar lang={lang} busy={busy} onSimulate={simulate} />
+      <SimulationBottomBar
+        lang={lang}
+        busy={busy}
+        onSimulate={simulate}
+        onObjectionClick={() => setObjectionClicks((count) => count + 1)}
+        onRegularResponse={() => setObjectionClicks(0)}
+      />
+      {objectionClicks >= 3 && !mobilityExplored && !deadlockDismissed && (
+        <aside
+          role="status"
+          className="fixed bottom-32 right-4 z-40 max-w-sm animate-in slide-in-from-right rounded-2xl border border-amber-300 bg-card p-4 shadow-xl sm:bottom-28 sm:right-6"
+        >
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 rounded-full bg-amber-100 p-2 text-amber-800">
+              <Scale className="h-4 w-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-navy">
+                {lang === "hi" ? "परिवार की असहमति बनी हुई है" : "Family divergence persists"}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {lang === "hi"
+                  ? "क्या आप मेरठ ITI के काउंसलर से बात करना चाहेंगे?"
+                  : "Would you like to connect with a Meerut ITI counsellor?"}
+              </p>
+              <button
+                type="button"
+                onClick={() => setCounselorOpen(true)}
+                className="mt-3 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition hover:brightness-105"
+              >
+                {lang === "hi" ? "डेमो रेफ़रल देखें" : "Review demo referral"}
+              </button>
+            </div>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              onClick={() => setDeadlockDismissed(true)}
+              className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </aside>
+      )}
+      <CounselorTriageModal
+        isOpen={counselorOpen}
+        onClose={() => setCounselorOpen(false)}
+        lang={lang}
+        selectedTradeName={selectedTrade.trade_name}
+        currentDivergence={converged ? 0.18 : 0.42}
+      />
       {modal === "roi" && <ParentRoiModal onClose={() => setModal(null)} />}
       {modal === "alumni" && <AlumniStoryModal onClose={() => setModal(null)} />}
     </div>

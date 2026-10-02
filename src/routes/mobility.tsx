@@ -29,6 +29,9 @@ function Mobility() {
   const trade = MOCK_TRADES.find((item) => item.trade_id === tradeId)!;
   const hi = lang === "hi";
   useEffect(() => {
+    window.sessionStorage.setItem("mitraskill_mobility_explored", "true");
+  }, []);
+  useEffect(() => {
     if (!playing) return;
     const timer = window.setTimeout(() => setPlaying(false), 4000);
     return () => window.clearTimeout(timer);
