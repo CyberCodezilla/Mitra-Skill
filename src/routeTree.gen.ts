@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CounselRouteImport } from './routes/counsel'
+import { Route as MobilityRouteImport } from './routes/mobility'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +23,40 @@ const CounselRoute = CounselRouteImport.update({
   path: '/counsel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MobilityRoute = MobilityRouteImport.update({
+  id: '/mobility',
+  path: '/mobility',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/counsel': typeof CounselRoute
+  '/mobility': typeof MobilityRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/counsel': typeof CounselRoute
+  '/mobility': typeof MobilityRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/counsel': typeof CounselRoute
+  '/mobility': typeof MobilityRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/counsel'
+  fullPaths: '/' | '/counsel' | '/mobility'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/counsel'
-  id: '__root__' | '/' | '/counsel'
+  to: '/' | '/counsel' | '/mobility'
+  id: '__root__' | '/' | '/counsel' | '/mobility'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CounselRoute: typeof CounselRoute
+  MobilityRoute: typeof MobilityRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CounselRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mobility': {
+      id: '/mobility'
+      path: '/mobility'
+      fullPath: '/mobility'
+      preLoaderRoute: typeof MobilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CounselRoute: CounselRoute,
+  MobilityRoute: MobilityRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
