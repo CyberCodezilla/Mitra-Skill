@@ -15,8 +15,8 @@ export const Route = createFileRoute("/counsel")({
 });
 
 type Activity =
-  | { id: string; kind: "student" | "parent"; text: Bi }
-  | { id: string; kind: "arbiter"; tradeId: string; text: Bi }
+  | { id: string; kind: "student" | "parent"; text: Bi; thinkingMs: number }
+  | { id: string; kind: "arbiter"; tradeId: string; text: Bi; thinkingMs: number }
   | null;
 type DialogueEvent =
   | { kind: "student"; text: Bi }
@@ -56,12 +56,12 @@ function Counsel() {
     for (const event of events) {
       if (thisRun !== runId.current) return;
       const id = messageId();
-      const thinkingMs = event.kind === "arbiter" ? 1250 + Math.random() * 450 : 180;
+      const thinkingMs = event.kind === "arbiter" ? 3150 + Math.random() * 450 : 180;
       const characterCount = Array.from(event.text[langRef.current]).length;
       const messageWaitMs = event.kind === "arbiter"
-        ? Math.min(3600, Math.max(1700, characterCount * 18))
+        ? 0
         : Math.min(3400, Math.max(1000, characterCount * 27));
-      setActivity({ ...event, id });
+      setActivity({ ...event, id, thinkingMs });
       await delay(thinkingMs + messageWaitMs);
       if (thisRun !== runId.current) return;
       const item: ChatItem = event.kind === "arbiter"

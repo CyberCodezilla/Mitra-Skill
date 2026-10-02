@@ -5,8 +5,8 @@ import type { Lang } from "@/lib/app-context";
 import { AiArbiterCard } from "./AiArbiterCard";
 
 type Activity =
-  | { id: string; kind: "student" | "parent"; tradeId?: never; text: Bi }
-  | { id: string; kind: "arbiter"; tradeId: string; text: Bi }
+  | { id: string; kind: "student" | "parent"; tradeId?: never; text: Bi; thinkingMs: number }
+  | { id: string; kind: "arbiter"; tradeId: string; text: Bi; thinkingMs: number }
   | null;
 
 type Props = {
