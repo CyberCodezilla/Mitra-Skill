@@ -127,15 +127,40 @@ export function PlatformTour() {
           height: adminRect.height,
         });
       } else setAdminBox(null);
+      // Keep the explanation panel outside the spotlight. Try each side in
+      // order, then choose the side with the most room if the viewport is tight.
       const cardWidth = Math.min(380, window.innerWidth - 32);
-      const preferredTop = rect.bottom + 20;
-      const top =
-        preferredTop + 300 < window.innerHeight ? preferredTop : Math.max(16, rect.top - 300);
-      const left = Math.min(
-        Math.max(16, rect.left + rect.width / 2 - cardWidth / 2),
-        window.innerWidth - cardWidth - 16,
+      const cardHeight = Math.min(360, window.innerHeight - 32);
+      const gap = 24;
+      const margin = 16;
+      const clamp = (value: number, min: number, max: number) =>
+        Math.min(Math.max(value, min), Math.max(min, max));
+      const centeredLeft = clamp(
+        rect.left + rect.width / 2 - cardWidth / 2,
+        margin,
+        window.innerWidth - cardWidth - margin,
       );
-      setCard({ top, left });
+      const centeredTop = clamp(
+        rect.top + rect.height / 2 - cardHeight / 2,
+        margin,
+        window.innerHeight - cardHeight - margin,
+      );
+      const candidates = [
+        { top: rect.bottom + gap, left: centeredLeft },
+        { top: rect.top - cardHeight - gap, left: centeredLeft },
+        { top: centeredTop, left: rect.right + gap },
+        { top: centeredTop, left: rect.left - cardWidth - gap },
+      ].map((candidate) => ({
+        top: clamp(candidate.top, margin, window.innerHeight - cardHeight - margin),
+        left: clamp(candidate.left, margin, window.innerWidth - cardWidth - margin),
+      }));
+      const doesNotOverlap = (candidate: { top: number; left: number }) =>
+        candidate.left + cardWidth <= rect.left - gap ||
+        candidate.left >= rect.right + gap ||
+        candidate.top + cardHeight <= rect.top - gap ||
+        candidate.top >= rect.bottom + gap;
+      const selected = candidates.find(doesNotOverlap) ?? candidates[0]!;
+      setCard(selected);
     };
     animation = window.requestAnimationFrame(() => {
       const target = current.target
