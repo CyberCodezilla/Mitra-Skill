@@ -42,16 +42,34 @@ export const SCRIPTS: Record<string, TradeScript> = {
     parentDefault: "salary",
     objections: {
       salary: {
-        parent: { en: "How much will he really earn? I need at least ₹18,000 a month for him to be settled.", hi: "असल में कितना कमाएगा? कम से कम ₹18,000 महीना चाहिए तभी वो सेटल होगा।" },
-        arbiter: { en: "Ramesh-ji, audited data from the Meerut–NCR corridor shows starting pay of ₹17,000–₹24,500, averaging ₹19,500 — above your ₹18,000 threshold. Apprentices also earn a NAPS stipend while training.", hi: "रमेश जी, मेरठ–एनसीआर क्षेत्र के सत्यापित आंकड़ों में शुरुआती वेतन ₹17,000–₹24,500 है, औसत ₹19,500 — आपकी ₹18,000 की अपेक्षा से अधिक। प्रशिक्षण के दौरान NAPS स्टाइपेंड भी मिलता है।" },
+        parent: {
+          en: "How much will he really earn? I need at least ₹18,000 a month for him to be settled.",
+          hi: "असल में कितना कमाएगा? कम से कम ₹18,000 महीना चाहिए तभी वो सेटल होगा।",
+        },
+        arbiter: {
+          en: "Ramesh-ji, audited data from the Meerut–NCR corridor shows starting pay of ₹17,000–₹24,500, averaging ₹19,500 — above your ₹18,000 threshold. Apprentices also earn a NAPS stipend while training.",
+          hi: "रमेश जी, मेरठ–एनसीआर क्षेत्र के सत्यापित आंकड़ों में शुरुआती वेतन ₹17,000–₹24,500 है, औसत ₹19,500 — आपकी ₹18,000 की अपेक्षा से अधिक। प्रशिक्षण के दौरान NAPS स्टाइपेंड भी मिलता है।",
+        },
       },
       stigma: {
-        parent: { en: "What will relatives say? A BA graduate gets more respect than an ITI boy.", hi: "रिश्तेदार क्या कहेंगे? बीए वाले की इज़्ज़त आईटीआई वाले से ज़्यादा होती है।" },
-        arbiter: { en: "A natural worry. But 80 NCrF credits let Aman enter the 2nd year of a Polytechnic Diploma, and later a B.Tech. He keeps the degree path open while earning earlier than a BA student.", hi: "यह चिंता स्वाभाविक है। लेकिन 80 NCrF क्रेडिट से अमन सीधे पॉलिटेक्निक डिप्लोमा के दूसरे वर्ष में और बाद में बी.टेक में जा सकता है। डिग्री का रास्ता खुला रहता है, और कमाई बीए से पहले शुरू होती है।" },
+        parent: {
+          en: "What will relatives say? A BA graduate gets more respect than an ITI boy.",
+          hi: "रिश्तेदार क्या कहेंगे? बीए वाले की इज़्ज़त आईटीआई वाले से ज़्यादा होती है।",
+        },
+        arbiter: {
+          en: "A natural worry. But 80 NCrF credits let Aman enter the 2nd year of a Polytechnic Diploma, and later a B.Tech. He keeps the degree path open while earning earlier than a BA student.",
+          hi: "यह चिंता स्वाभाविक है। लेकिन 80 NCrF क्रेडिट से अमन सीधे पॉलिटेक्निक डिप्लोमा के दूसरे वर्ष में और बाद में बी.टेक में जा सकता है। डिग्री का रास्ता खुला रहता है, और कमाई बीए से पहले शुरू होती है।",
+        },
       },
       safety: {
-        parent: { en: "Workshops are dirty and dangerous. Will he be safe there?", hi: "वर्कशॉप गंदे और खतरनाक होते हैं। क्या वो वहाँ सुरक्षित रहेगा?" },
-        arbiter: { en: "Placements are in modern diagnostic centres — cleanroom, non-roadside environments — with a verified workplace safety score of 9.2 / 10.", hi: "नियुक्तियाँ आधुनिक डायग्नोस्टिक सेंटरों में होती हैं — साफ़-सुथरे, सड़क से दूर — जिनका सत्यापित सुरक्षा स्कोर 9.2 / 10 है।" },
+        parent: {
+          en: "Workshops are dirty and dangerous. Will he be safe there?",
+          hi: "वर्कशॉप गंदे और खतरनाक होते हैं। क्या वो वहाँ सुरक्षित रहेगा?",
+        },
+        arbiter: {
+          en: "Placements are in modern diagnostic centres — cleanroom, non-roadside environments — with a verified workplace safety score of 9.2 / 10.",
+          hi: "नियुक्तियाँ आधुनिक डायग्नोस्टिक सेंटरों में होती हैं — साफ़-सुथरे, सड़क से दूर — जिनका सत्यापित सुरक्षा स्कोर 9.2 / 10 है।",
+        },
       },
     },
   },
@@ -77,22 +95,52 @@ export const SCRIPTS: Record<string, TradeScript> = {
     parentDefault: "salary",
     objections: {
       salary: {
-        parent: { en: "Will it pay at least ₹18,000 a month?", hi: "क्या इसमें कम से कम ₹18,000 महीना मिलेगा?" },
-        arbiter: { en: "Yes. Audited starting pay is ₹18,000–₹26,000, averaging ₹21,000, with 92.1% placement across Tata Power Solar, Adani vendors and State Discoms.", hi: "हाँ। सत्यापित शुरुआती वेतन ₹18,000–₹26,000 है, औसत ₹21,000, और टाटा पावर सोलर, अदाणी वेंडर्स व राज्य डिस्कॉम में 92.1% प्लेसमेंट है।" },
+        parent: {
+          en: "Will it pay at least ₹18,000 a month?",
+          hi: "क्या इसमें कम से कम ₹18,000 महीना मिलेगा?",
+        },
+        arbiter: {
+          en: "Yes. Audited starting pay is ₹18,000–₹26,000, averaging ₹21,000, with 92.1% placement across Tata Power Solar, Adani vendors and State Discoms.",
+          hi: "हाँ। सत्यापित शुरुआती वेतन ₹18,000–₹26,000 है, औसत ₹21,000, और टाटा पावर सोलर, अदाणी वेंडर्स व राज्य डिस्कॉम में 92.1% प्लेसमेंट है।",
+        },
       },
       stigma: {
-        parent: { en: "People will call him a panel-fitter, not an engineer.", hi: "लोग उसे पैनल लगाने वाला कहेंगे, इंजीनियर नहीं।" },
-        arbiter: { en: "40 NCrF credits open the way to a Diploma in Electrical & Renewable Energy and then a B.Tech in Renewable Energy Systems. Green-energy engineers are a respected, growing profession.", hi: "40 NCrF क्रेडिट से इलेक्ट्रिकल व रिन्यूएबल एनर्जी डिप्लोमा और फिर बी.टेक का रास्ता खुलता है। ग्रीन-एनर्जी इंजीनियर एक सम्मानित और बढ़ता पेशा है।" },
+        parent: {
+          en: "People will call him a panel-fitter, not an engineer.",
+          hi: "लोग उसे पैनल लगाने वाला कहेंगे, इंजीनियर नहीं।",
+        },
+        arbiter: {
+          en: "40 NCrF credits open the way to a Diploma in Electrical & Renewable Energy and then a B.Tech in Renewable Energy Systems. Green-energy engineers are a respected, growing profession.",
+          hi: "40 NCrF क्रेडिट से इलेक्ट्रिकल व रिन्यूएबल एनर्जी डिप्लोमा और फिर बी.टेक का रास्ता खुलता है। ग्रीन-एनर्जी इंजीनियर एक सम्मानित और बढ़ता पेशा है।",
+        },
       },
       safety: {
-        parent: { en: "Rooftops and electricity — isn't it risky?", hi: "छत और बिजली — क्या यह जोखिम भरा नहीं है?" },
-        arbiter: { en: "Certified training covers fall-protection and grid-safety protocols. The verified workplace safety score for this trade is 8.9 / 10.", hi: "प्रमाणित प्रशिक्षण में गिरने से बचाव और ग्रिड-सुरक्षा नियम शामिल हैं। इस ट्रेड का सत्यापित सुरक्षा स्कोर 8.9 / 10 है।" },
+        parent: {
+          en: "Rooftops and electricity — isn't it risky?",
+          hi: "छत और बिजली — क्या यह जोखिम भरा नहीं है?",
+        },
+        arbiter: {
+          en: "Certified training covers fall-protection and grid-safety protocols. The verified workplace safety score for this trade is 8.9 / 10.",
+          hi: "प्रमाणित प्रशिक्षण में गिरने से बचाव और ग्रिड-सुरक्षा नियम शामिल हैं। इस ट्रेड का सत्यापित सुरक्षा स्कोर 8.9 / 10 है।",
+        },
       },
     },
   },
 };
 
 export const ROI_ROWS = [
-  { path: { en: "3-Year General BA", hi: "3 वर्षीय सामान्य बीए" }, cost: "₹65,000", stipend: "₹0", start: "Month 42", total: "₹2.8 Lakhs" },
-  { path: { en: "2-Year ITI Mechatronics", hi: "2 वर्षीय आईटीआई मेकाट्रॉनिक्स" }, cost: "₹3,500", stipend: "₹9,500/mo (NAPS)", start: "Month 14", total: "₹8.6 Lakhs" },
+  {
+    path: { en: "3-Year General BA", hi: "3 वर्षीय सामान्य बीए" },
+    cost: "₹65,000",
+    stipend: "₹0",
+    start: "Month 42",
+    total: "₹2.8 Lakhs",
+  },
+  {
+    path: { en: "2-Year ITI Mechatronics", hi: "2 वर्षीय आईटीआई मेकाट्रॉनिक्स" },
+    cost: "₹3,500",
+    stipend: "₹9,500/mo (NAPS)",
+    start: "Month 14",
+    total: "₹8.6 Lakhs",
+  },
 ];
