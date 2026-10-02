@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import {
   Award,
@@ -31,7 +32,6 @@ export function Equalizer() {
 export function AiArbiterCard({
   tradeId,
   text,
-  visibleText,
   isGenerating = false,
   lang,
   onRoi,
@@ -39,7 +39,6 @@ export function AiArbiterCard({
 }: {
   tradeId: string;
   text: Bi;
-  visibleText?: string;
   isGenerating?: boolean;
   lang: Lang;
   onRoi: () => void;
@@ -85,12 +84,45 @@ export function AiArbiterCard({
           <Award className="h-4 w-4" /> Verified DGT 2024 Audit
         </span>
       </div>
-      <p lang={lang} className="mt-4 text-lg text-navy">
-        {isGenerating ? visibleText : text[lang]}
-        {isGenerating && (
-          <span className="ml-0.5 inline-block h-5 w-0.5 animate-pulse bg-primary align-text-bottom" aria-hidden="true" />
+      <AnimatePresence mode="wait" initial={false}>
+        {isGenerating ? (
+          <motion.div
+            key="arbiter-processing"
+            initial={{ opacity: 0.6 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            role="status"
+            aria-live="polite"
+            className="mt-4 flex min-h-14 items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-sm text-indigo-900"
+          >
+            <span className="font-medium">
+              {lang === "hi" ? "MitraSkill Arbiter बातचीत पर विचार कर रहा है" : "MitraSkill Arbiter is reviewing the conversation"}
+            </span>
+            <span className="flex items-center gap-1" aria-hidden="true">
+              {[0, 1, 2].map((dot) => (
+                <motion.span
+                  key={dot}
+                  className="h-1.5 w-1.5 rounded-full bg-indigo-600"
+                  animate={{ y: [0, -4, 0], opacity: [0.35, 1, 0.35] }}
+                  transition={{ duration: 0.7, ease: "easeInOut", repeat: Infinity, delay: dot * 0.13 }}
+                />
+              ))}
+            </span>
+          </motion.div>
+        ) : (
+          <motion.p
+            key="arbiter-response"
+            initial={{ opacity: 0.4 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
+            lang={lang}
+            className="mt-4 text-lg text-navy"
+          >
+            {text[lang]}
+          </motion.p>
         )}
-      </p>
+      </AnimatePresence>
       <p lang={lang} className="mt-2 border-l-2 border-success pl-3 text-sm text-muted-foreground">
         {trade.parent_reassurance_script[lang]}
       </p>
