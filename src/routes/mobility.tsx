@@ -6,6 +6,7 @@ import { MOCK_TRADES } from "@/data/mockTrades";
 import { NcrfLadderStepper } from "@/components/mobility/NcrfLadderStepper";
 import { CreditMathExplainer } from "@/components/mobility/CreditMathExplainer";
 import { SocialStatusMatrix } from "@/components/mobility/SocialStatusMatrix";
+import { useIndicVoice } from "@/utils/useIndicVoice";
 
 export const Route = createFileRoute("/mobility")({
   head: () => ({
@@ -25,17 +26,12 @@ function Mobility() {
   const { lang } = useApp();
   const [tradeId, setTradeId] = useState("AUTO_MECH_01");
   const [activeStage, setActiveStage] = useState(2);
-  const [playing, setPlaying] = useState(false);
+  const { speak, stop, isSpeaking: playing } = useIndicVoice();
   const trade = MOCK_TRADES.find((item) => item.trade_id === tradeId)!;
   const hi = lang === "hi";
   useEffect(() => {
     window.sessionStorage.setItem("mitraskill_mobility_explored", "true");
   }, []);
-  useEffect(() => {
-    if (!playing) return;
-    const timer = window.setTimeout(() => setPlaying(false), 4000);
-    return () => window.clearTimeout(timer);
-  }, [playing]);
   return (
     <div className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:pt-8">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -91,7 +87,16 @@ function Mobility() {
           trade={trade}
           lang={lang}
           playing={playing}
-          onPlay={() => setPlaying(true)}
+          onPlay={() =>
+            playing
+              ? stop()
+              : speak(
+                  lang === "hi"
+                    ? "NCrF framework ke tahat, seekhne ke ghante academic credit mein badle ja sakte hain. Credit acceptance aur admission sambandhit sansthan ke niyamon par nirbhar hai."
+                    : "Under the NCrF framework, learning hours may translate into academic credits. Credit acceptance and admission depend on the rules of the receiving institution.",
+                  lang,
+                )
+          }
         />
         <SocialStatusMatrix trade={trade} lang={lang} />
       </main>

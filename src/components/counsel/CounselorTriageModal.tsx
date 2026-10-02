@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { COUNSELOR_GREETING_AUDIO_SCRIPT, MOCK_COUNSELOR } from "@/data/mockCounselor";
 import type { Lang } from "@/lib/app-context";
+import { useIndicVoice } from "@/utils/useIndicVoice";
 
 type CallState = "dossier" | "connecting" | "active" | "completed";
 
@@ -46,6 +47,7 @@ export function CounselorTriageModal({
   const [muted, setMuted] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [notice, setNotice] = useState("");
+  const { speak, stop } = useIndicVoice();
   const hi = lang === "hi";
 
   useEffect(() => {
@@ -96,11 +98,7 @@ export function CounselorTriageModal({
       );
       return;
     }
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(script);
-    utterance.lang = hi ? "hi-IN" : "en-IN";
-    utterance.rate = 0.92;
-    window.speechSynthesis.speak(utterance);
+    speak(script, lang);
   };
   const time = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   const connect = () => {
@@ -108,7 +106,7 @@ export function CounselorTriageModal({
     setState("connecting");
   };
   const finish = () => {
-    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    stop();
     setState("completed");
   };
 

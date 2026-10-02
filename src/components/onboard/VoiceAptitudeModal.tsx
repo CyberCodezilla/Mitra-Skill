@@ -28,6 +28,7 @@ import {
 } from "@/data/mockAptitudeScenarios";
 import { computeCosineSimilarity } from "@/utils/arbitrationEngine";
 import type { AptitudeVector, Lang } from "@/lib/app-context";
+import { useIndicVoice } from "@/utils/useIndicVoice";
 
 export type AptitudeDiscovery = {
   aptitudeVector: AptitudeVector;
@@ -78,6 +79,7 @@ const DOMAIN_LABELS = {
 export function VoiceAptitudeModal({ isOpen, onClose, lang, onCompleteDiscovery }: Props) {
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const { speak, stop } = useIndicVoice();
   const [audioSeconds, setAudioSeconds] = useState(0);
   const [choices, setChoices] = useState<ScenarioOption[]>([]);
   const [showResults, setShowResults] = useState(false);
@@ -86,8 +88,7 @@ export function VoiceAptitudeModal({ isOpen, onClose, lang, onCompleteDiscovery 
   const scenario = MOCK_APTITUDE_SCENARIOS[step]!;
 
   const stopAudio = () => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window)
-      window.speechSynthesis.cancel();
+    stop();
     setPlaying(false);
   };
   const close = () => {
@@ -172,14 +173,7 @@ export function VoiceAptitudeModal({ isOpen, onClose, lang, onCompleteDiscovery 
     elapsedRef.current = 0;
     setAudioSeconds(0);
     setPlaying(true);
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(scenario.audio_script_hi);
-      utterance.lang = "hi-IN";
-      utterance.rate = 0.92;
-      utterance.onend = () => setPlaying(false);
-      window.speechSynthesis.speak(utterance);
-    }
+    speak(scenario.audio_script_hi, "hi", () => setPlaying(false));
   };
   const selectOption = (option: ScenarioOption) => {
     stopAudio();

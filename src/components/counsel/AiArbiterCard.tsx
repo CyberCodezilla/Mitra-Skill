@@ -11,6 +11,7 @@ import {
   Database,
   GraduationCap,
   HeartHandshake,
+  MapPin,
   Scale,
   TrendingUp,
   Users,
@@ -20,6 +21,8 @@ import { MOCK_TRADES } from "@/data/mockTrades";
 import type { Bi } from "@/data/dialogueScripts";
 import type { Lang } from "@/lib/app-context";
 import { FacilityVerificationModal } from "@/components/counsel/FacilityVerificationModal";
+import { CenterLocatorModal } from "@/components/counsel/CenterLocatorModal";
+import { useIndicVoice } from "@/utils/useIndicVoice";
 
 export function Equalizer() {
   return (
@@ -54,9 +57,10 @@ export function AiArbiterCard({
   onAlumni: () => void;
   onEscalate: () => void;
 }) {
-  const [playing, setPlaying] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [isFacilityModalOpen, setIsFacilityModalOpen] = useState(false);
+  const [isLocatorOpen, setIsLocatorOpen] = useState(false);
+  const { speak, stop, isSpeaking } = useIndicVoice();
   const trade = MOCK_TRADES.find((item) => item.trade_id === tradeId)!;
   const metrics = trade.verified_metrics;
   const steps =
@@ -73,12 +77,6 @@ export function AiArbiterCard({
           "Check verified trade evidence",
           "Shape a balanced response",
         ];
-
-  useEffect(() => {
-    if (!playing) return;
-    const timer = window.setTimeout(() => setPlaying(false), 4000);
-    return () => window.clearTimeout(timer);
-  }, [playing]);
 
   useEffect(() => {
     if (!isGenerating) return;
@@ -227,14 +225,20 @@ export function AiArbiterCard({
         />
       </div>
       <button
-        onClick={() => setPlaying(true)}
+        onClick={() => (isSpeaking ? stop() : speak(text[lang], lang))}
         disabled={isGenerating}
         className="mt-5 flex items-center gap-2 rounded-full border bg-background px-4 py-2 font-medium text-navy"
-        aria-pressed={playing}
+        aria-pressed={isSpeaking}
       >
         <Volume2 className="h-5 w-5 text-primary" />{" "}
-        {playing ? "Playing Hindi audio" : "Suno Hindi Mein / Listen Audio"}{" "}
-        {playing && <Equalizer />}
+        {isSpeaking
+          ? lang === "hi"
+            ? "आवाज़ चल रही है · रोकें"
+            : "Speaking · stop"
+          : lang === "hi"
+            ? "हिंदी में सुनें"
+            : "Listen to arbiter response"}{" "}
+        {isSpeaking && <Equalizer />}
       </button>
       <div className="mt-5 flex flex-wrap gap-2">
         <button
@@ -245,6 +249,15 @@ export function AiArbiterCard({
         >
           <Building2 className="h-4 w-4 text-emerald-800" />
           {lang === "hi" ? "केंद्र व सुरक्षा (नमूना)" : "Center & Safety (sample)"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsLocatorOpen(true)}
+          disabled={isGenerating}
+          className="flex items-center gap-2 rounded-xl border border-teal-700/30 bg-teal-50 px-4 py-2 font-semibold text-teal-950 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-teal-300/30 dark:bg-teal-950/40 dark:text-teal-100 dark:hover:bg-teal-900/60"
+        >
+          <MapPin className="h-4 w-4" />{" "}
+          {lang === "hi" ? "नज़दीकी ITI व सीटें" : "Nearby ITIs & seats"}
         </button>
         <button
           onClick={onEscalate}
@@ -286,6 +299,11 @@ export function AiArbiterCard({
         onClose={() => setIsFacilityModalOpen(false)}
         lang={lang}
         tradeId={tradeId}
+      />
+      <CenterLocatorModal
+        isOpen={isLocatorOpen}
+        onClose={() => setIsLocatorOpen(false)}
+        lang={lang}
       />
     </article>
   );

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { MOCK_ALUMNI_STORIES, type AlumniStory } from "@/data/mockAlumni";
 import type { Lang } from "@/lib/app-context";
+import { useIndicVoice } from "@/utils/useIndicVoice";
 
 type Filter = "ALL" | "AUTO" | "SOLAR" | "WOMEN";
 type Props = { isOpen: boolean; onClose: () => void; lang: Lang; initialTradeId?: string };
@@ -23,7 +24,12 @@ export function AlumniReelsDrawer({ isOpen, onClose, lang, initialTradeId }: Pro
   const [playingStoryId, setPlayingStoryId] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const elapsedRef = useRef(0);
+  const { speak, stop } = useIndicVoice();
   const hi = lang === "hi";
+
+  useEffect(() => {
+    if (!isOpen) stop();
+  }, [isOpen, stop]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -35,10 +41,11 @@ export function AlumniReelsDrawer({ isOpen, onClose, lang, initialTradeId }: Pro
           : "ALL",
     );
     setSelectedStoryId(null);
+    stop();
     setPlayingStoryId(null);
     setElapsed(0);
     elapsedRef.current = 0;
-  }, [isOpen, initialTradeId]);
+  }, [isOpen, initialTradeId, stop]);
   useEffect(() => {
     if (!isOpen) return;
     const keyHandler = (event: KeyboardEvent) => {
@@ -74,12 +81,6 @@ export function AlumniReelsDrawer({ isOpen, onClose, lang, initialTradeId }: Pro
     const timer = window.setInterval(() => {
       elapsedRef.current += 1;
       setElapsed(elapsedRef.current);
-      if (elapsedRef.current >= story.audio_duration_secs) {
-        setPlayingStoryId(null);
-        setSelectedStoryId(null);
-        setElapsed(0);
-        elapsedRef.current = 0;
-      }
     }, 1000);
     return () => window.clearInterval(timer);
   }, [playingStoryId]);
@@ -87,6 +88,7 @@ export function AlumniReelsDrawer({ isOpen, onClose, lang, initialTradeId }: Pro
   if (!isOpen) return null;
   const togglePlayback = (story: AlumniStory) => {
     if (playingStoryId === story.id) {
+      stop();
       setPlayingStoryId(null);
       return;
     }
@@ -96,6 +98,15 @@ export function AlumniReelsDrawer({ isOpen, onClose, lang, initialTradeId }: Pro
       elapsedRef.current = 0;
     }
     setPlayingStoryId(story.id);
+    speak(
+      `${lang === "hi" ? story.name_hi : story.name}: ${lang === "hi" ? story.quote_hi : story.quote_en}`,
+      lang,
+      () => {
+        setPlayingStoryId(null);
+        setElapsed(0);
+        elapsedRef.current = 0;
+      },
+    );
   };
   const filters: { id: Filter; en: string; hi: string }[] = [
     { id: "ALL", en: "All stories", hi: "सभी कहानियाँ" },
@@ -315,10 +326,10 @@ function ReelCard({
               {isPlaying
                 ? hi
                   ? "रोकें"
-                  : "Pause sample voice note"
+                  : "Stop narration"
                 : hi
                   ? "नमूना वॉइस नोट सुनें"
-                  : "Play sample voice note"}
+                  : "Listen to sample story"}
             </button>
             <span className="font-mono text-xs text-muted-foreground">
               {isSelected ? `0:${String(elapsed).padStart(2, "0")}` : "0:00"} / 0:
@@ -359,7 +370,7 @@ function ReelCard({
           <p className="mt-1 text-[10px] text-muted-foreground">
             {hi
               ? "केवल प्लेबैक एनीमेशन; कोई रिकॉर्डेड ऑडियो नहीं।"
-              : "Playback animation only; no recorded audio is included."}
+              : "Browser-generated narration of a fictional sample story; this is not a real recording."}
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">

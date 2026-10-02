@@ -10,6 +10,7 @@ import { ParentRoiModal } from "@/components/counsel/ParentRoiModal";
 import { AlumniReelsDrawer } from "@/components/counsel/AlumniReelsDrawer";
 import { CounselorTriageModal } from "@/components/counsel/CounselorTriageModal";
 import { ConsensusMathInspector } from "@/components/counsel/ConsensusMathInspector";
+import { CenterLocatorModal } from "@/components/counsel/CenterLocatorModal";
 
 export const Route = createFileRoute("/counsel")({
   head: () => ({ meta: [{ title: "Dyadic Dialogue | MitraSkill Family Counselling" }] }),
@@ -57,6 +58,7 @@ function Counsel() {
   const [converged, setConverged] = useState(false);
   const [counselorOpen, setCounselorOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [locatorOpen, setLocatorOpen] = useState(false);
   const [objectionClicks, setObjectionClicks] = useState(0);
   const [mobilityExplored, setMobilityExplored] = useState(false);
   const [deadlockDismissed, setDeadlockDismissed] = useState(false);
@@ -192,6 +194,14 @@ function Counsel() {
                   className={`h-4 w-4 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
                 />
               </button>
+              <button
+                type="button"
+                onClick={() => setLocatorOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/30 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-950 transition hover:bg-emerald-100 dark:border-emerald-300/30 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
+              >
+                <MapPin className="h-3.5 w-3.5" />
+                {lang === "hi" ? "नज़दीकी ITI सीटें" : "Nearby ITI Seats & Apprenticeships"}
+              </button>
             </div>
           </div>
           {detailsOpen && (
@@ -289,6 +299,7 @@ function Counsel() {
         onDivergenceChange={setCurrentDivergence}
         studentAptitude={studentAptitude}
       />
+      <CenterLocatorModal isOpen={locatorOpen} onClose={() => setLocatorOpen(false)} lang={lang} />
       {modal === "roi" && <ParentRoiModal onClose={() => setModal(null)} />}
       <AlumniReelsDrawer
         isOpen={modal === "alumni"}

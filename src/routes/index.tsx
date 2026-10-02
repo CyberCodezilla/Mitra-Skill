@@ -15,6 +15,7 @@ import {
   type AptitudeDiscovery,
 } from "@/components/onboard/VoiceAptitudeModal";
 import { MOCK_TRADES } from "@/data/mockTrades";
+import { useIndicVoice } from "@/utils/useIndicVoice";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,7 +52,7 @@ function Onboarding() {
   } = useApp();
   const nav = useNavigate();
   const [level, setLevel] = useState(1);
-  const [playing, setPlaying] = useState(false);
+  const { speak, stop, isSpeaking: playing } = useIndicVoice();
   const [aptitudeModalOpen, setAptitudeModalOpen] = useState(false);
   const heroTitle = t.heroTitle[lang];
   const [heroInitial, ...heroRest] = Array.from(heroTitle);
@@ -89,7 +90,7 @@ function Onboarding() {
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">{t.heroTag[lang]}</p>
 
           <button
-            onClick={() => setPlaying((p) => !p)}
+            onClick={() => (playing ? stop() : speak(`${heroTitle}. ${t.heroTag[lang]}`, lang))}
             className="mx-auto mt-6 flex items-center gap-3 rounded-full border bg-card px-5 py-2.5 shadow-card"
             aria-pressed={playing}
           >

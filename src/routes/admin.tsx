@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Download,
+  FileText,
   MapPin,
   Shield,
   TrendingUp,
@@ -14,6 +15,7 @@ import { useApp } from "@/lib/app-context";
 import { ResistanceHeatmap } from "@/components/admin/ResistanceHeatmap";
 import { ObjectionBreakdownChart } from "@/components/admin/ObjectionBreakdownChart";
 import { SentimentMigrationChart } from "@/components/admin/SentimentMigrationChart";
+import { DsdpReportModal } from "@/components/admin/DsdpReportModal";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "MSDE Administrator Console — MitraSkill" }] }),
@@ -45,6 +47,7 @@ function Admin() {
   const [state, setState] = useState("Uttar Pradesh");
   const [district, setDistrict] = useState("Meerut");
   const [trade, setTrade] = useState("All Trades");
+  const [dsdpOpen, setDsdpOpen] = useState(false);
   const filteredEvents = useMemo(
     () =>
       events.filter(
@@ -137,6 +140,13 @@ function Admin() {
           <Download className="h-4 w-4" />
           {hi ? "जिला कौशल योजना CSV निर्यात करें" : "Export District Skill Plan Report (CSV)"}
         </button>
+        <button
+          type="button"
+          onClick={() => setDsdpOpen(true)}
+          className="inline-flex items-center gap-2 rounded-xl border border-emerald-800/30 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100 dark:border-emerald-300/30 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
+        >
+          <FileText className="h-4 w-4" /> DSDP Policy Memo
+        </button>
       </section>
       <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi
@@ -168,6 +178,13 @@ function Admin() {
         <ResistanceHeatmap lang={lang} district={district} />
         <ObjectionBreakdownChart lang={lang} />
       </div>
+      <DsdpReportModal
+        isOpen={dsdpOpen}
+        onClose={() => setDsdpOpen(false)}
+        state={state}
+        district={district}
+        lang={lang}
+      />
       <div className="mt-5">
         <SentimentMigrationChart lang={lang} />
       </div>
