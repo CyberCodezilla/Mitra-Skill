@@ -5,6 +5,7 @@ import {
   Award,
   ArrowRight,
   BarChart3,
+  Building2,
   Check,
   Clapperboard,
   Database,
@@ -18,6 +19,7 @@ import {
 import { MOCK_TRADES } from "@/data/mockTrades";
 import type { Bi } from "@/data/dialogueScripts";
 import type { Lang } from "@/lib/app-context";
+import { FacilityVerificationModal } from "@/components/counsel/FacilityVerificationModal";
 
 export function Equalizer() {
   return (
@@ -54,6 +56,7 @@ export function AiArbiterCard({
 }) {
   const [playing, setPlaying] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
+  const [isFacilityModalOpen, setIsFacilityModalOpen] = useState(false);
   const trade = MOCK_TRADES.find((item) => item.trade_id === tradeId)!;
   const metrics = trade.verified_metrics;
   const steps =
@@ -107,8 +110,9 @@ export function AiArbiterCard({
             </span>
           )}
         </div>
-        <span className="ml-auto flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 ring-2 ring-emerald-400/20 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
-          <Award className="h-4 w-4" /> Verified DGT 2024 Audit
+        <span className="ml-auto flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950">
+          <Award className="h-4 w-4" />{" "}
+          {lang === "hi" ? "डेमो डेटा · स्रोत जाँचें" : "Demo data · verify sources"}
         </span>
       </div>
 
@@ -234,6 +238,15 @@ export function AiArbiterCard({
       </button>
       <div className="mt-5 flex flex-wrap gap-2">
         <button
+          type="button"
+          onClick={() => setIsFacilityModalOpen(true)}
+          disabled={isGenerating}
+          className="flex items-center gap-2 rounded-xl border border-emerald-700/35 bg-emerald-50 px-4 py-2 font-semibold text-emerald-950 transition hover:border-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Building2 className="h-4 w-4 text-emerald-800" />
+          {lang === "hi" ? "केंद्र व सुरक्षा (नमूना)" : "Center & Safety (sample)"}
+        </button>
+        <button
           onClick={onEscalate}
           disabled={isGenerating}
           className="flex items-center gap-2 rounded-xl border-2 border-primary/30 bg-accent/50 px-4 py-2 font-medium text-navy transition hover:border-primary hover:bg-accent disabled:opacity-50"
@@ -268,6 +281,12 @@ export function AiArbiterCard({
           <Clapperboard className="h-5 w-5" /> Local Alumni Story (Meerut)
         </button>
       </div>
+      <FacilityVerificationModal
+        isOpen={isFacilityModalOpen}
+        onClose={() => setIsFacilityModalOpen(false)}
+        lang={lang}
+        tradeId={tradeId}
+      />
     </article>
   );
 }
