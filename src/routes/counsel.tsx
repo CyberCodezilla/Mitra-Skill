@@ -14,7 +14,10 @@ export const Route = createFileRoute("/counsel")({
   component: Counsel,
 });
 
-type Activity = "student" | "parent" | "arbiter" | null;
+type Activity =
+  | { id: string; kind: "student" | "parent"; text: Bi; thinkingMs: number; typingMs: number }
+  | { id: string; kind: "arbiter"; tradeId: string; text: Bi; thinkingMs: number; typingMs: number }
+  | null;
 type DialogueEvent =
   | { kind: "student"; text: Bi }
   | { kind: "parent"; text: Bi }
@@ -44,19 +47,29 @@ function Counsel() {
   const [converged, setConverged] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const runId = useRef(0);
+  const langRef = useRef(lang);
+  langRef.current = lang;
 
   const animateEvents = useCallback(async (events: DialogueEvent[]) => {
     const thisRun = ++runId.current;
     setBusy(true);
     for (const event of events) {
       if (thisRun !== runId.current) return;
-      setActivity(event.kind);
-      const writingTime = Math.min(2800, Math.max(1100, 750 + event.text.en.length * 11));
-      await delay(event.kind === "arbiter" ? 1850 + Math.random() * 700 : writingTime);
+      const id = messageId();
+      const thinkingMs = event.kind === "arbiter" ? 1250 + Math.random() * 450 : 180;
+      const characterCount = Array.from(event.text[langRef.current]).length;
+      const typingMs = event.kind === "arbiter"
+        ? Math.min(3600, Math.max(1700, characterCount * 18))
+        : Math.min(3400, Math.max(1000, characterCount * 27));
+      setActivity({ ...event, id, thinkingMs, typingMs });
+      await delay(thinkingMs + typingMs);
       if (thisRun !== runId.current) return;
-      const item: ChatItem = { ...event, id: messageId() };
+      const item: ChatItem = event.kind === "arbiter"
+        ? { id, kind: "arbiter", tradeId: event.tradeId, text: event.text }
+        : { id, kind: event.kind, text: event.text };
       setItems((current) => [...current, item]);
-      await delay(460 + Math.random() * 320);
+      setActivity(null);
+      await delay(620 + Math.random() * 360);
     }
     if (thisRun === runId.current) {
       setActivity(null);
