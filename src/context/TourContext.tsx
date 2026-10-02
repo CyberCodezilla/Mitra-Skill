@@ -19,7 +19,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const close = (_completed = true) => {
     setIsOpen(false);
     if (typeof window !== "undefined")
-      window.localStorage.setItem("mitraskill_tour_completed", "true");
+      window.sessionStorage.setItem("mitraskill_tour_seen", "true");
   };
   const goTo = (next: number) => setStep(Math.max(0, Math.min(5, next)));
   return (

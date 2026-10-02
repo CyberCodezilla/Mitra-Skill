@@ -80,7 +80,7 @@ export function PlatformTour() {
     if (
       path !== "/" ||
       autoStarted.current ||
-      window.localStorage.getItem("mitraskill_tour_completed")
+      window.sessionStorage.getItem("mitraskill_tour_seen")
     )
       return;
     const timer = window.setTimeout(() => {
@@ -277,7 +277,7 @@ export function PlatformTour() {
               {current.title[lang]}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">{current.body[lang]}</p>
-            {step === 0 ? (
+            {false ? (
               <button
                 onClick={() => move(1)}
                 className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#E87722] px-4 py-3 font-semibold text-white"
@@ -289,14 +289,15 @@ export function PlatformTour() {
               <div className="mt-5 flex items-center justify-between gap-2">
                 <button
                   onClick={() => move(step - 1)}
-                  className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+                  disabled={step === 0}
+                  className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-35"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   {hi ? "पीछे" : "Back"}
                 </button>
                 <button
                   onClick={() => move(step + 1)}
-                  className="inline-flex items-center gap-1 rounded-xl bg-navy px-4 py-2.5 text-sm font-semibold text-white"
+                  className="inline-flex items-center gap-1 rounded-xl bg-navy px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#153b62]"
                 >
                   {step === 5 ? (hi ? "समाप्त" : "Finish") : hi ? "अगला" : "Next"}
                   <ArrowRight className="h-4 w-4" />
