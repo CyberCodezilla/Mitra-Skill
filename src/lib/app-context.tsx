@@ -4,7 +4,10 @@ export type Lang = "en" | "hi";
 export type SessionMode = "JOINT" | "STUDENT" | "PARENT";
 
 const STRINGS = {
-  subtitle: { en: "National Skilling & Family Guidance Initiative", hi: "राष्ट्रीय कौशल एवं पारिवारिक मार्गदर्शन पहल" },
+  subtitle: {
+    en: "National Skilling & Family Guidance Initiative",
+    hi: "राष्ट्रीय कौशल एवं पारिवारिक मार्गदर्शन पहल",
+  },
   counsellor: { en: "Live ITI Counsellor", hi: "लाइव ITI परामर्शदाता" },
   steps: {
     en: ["Onboarding", "Dyadic Dialogue", "Degree Mobility", "Family Accord"],
@@ -51,7 +54,11 @@ const AppCtx = createContext<Ctx | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLang] = useState<Lang>("en");
   const [mode, setMode] = useState<SessionMode>("JOINT");
-  return <AppCtx.Provider value={{ lang, setLang, mode, setMode, t: STRINGS }}>{children}</AppCtx.Provider>;
+  return (
+    <AppCtx.Provider value={{ lang, setLang, mode, setMode, t: STRINGS }}>
+      {children}
+    </AppCtx.Provider>
+  );
 }
 
 export function useApp() {
