@@ -22,7 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { lang, setLang, t } = useApp();
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const active = path.startsWith("/counsel") ? 1 : 0;
+  const active = path.startsWith("/mobility") ? 2 : path.startsWith("/counsel") ? 1 : 0;
 
   return (
     <div lang={lang} className="min-h-screen">
