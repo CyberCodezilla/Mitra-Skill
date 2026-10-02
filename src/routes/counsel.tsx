@@ -7,7 +7,7 @@ import { SCRIPTS, type Bi, type ChatItem, type Topic } from "@/data/dialogueScri
 import { DyadicChatFeed } from "@/components/counsel/DyadicChatFeed";
 import { SimulationBottomBar } from "@/components/counsel/SimulationBottomBar";
 import { ParentRoiModal } from "@/components/counsel/ParentRoiModal";
-import { AlumniStoryModal } from "@/components/counsel/AlumniStoryModal";
+import { AlumniReelsDrawer } from "@/components/counsel/AlumniReelsDrawer";
 import { CounselorTriageModal } from "@/components/counsel/CounselorTriageModal";
 import { ConsensusMathInspector } from "@/components/counsel/ConsensusMathInspector";
 
@@ -279,7 +279,12 @@ function Counsel() {
         onDivergenceChange={setCurrentDivergence}
       />
       {modal === "roi" && <ParentRoiModal onClose={() => setModal(null)} />}
-      {modal === "alumni" && <AlumniStoryModal onClose={() => setModal(null)} />}
+      <AlumniReelsDrawer
+        isOpen={modal === "alumni"}
+        onClose={() => setModal(null)}
+        lang={lang}
+        initialTradeId={selectedTrade.trade_id}
+      />
     </div>
   );
 }

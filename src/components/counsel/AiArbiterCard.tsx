@@ -278,7 +278,7 @@ export function AiArbiterCard({
           disabled={isGenerating}
           className="flex items-center gap-2 rounded-xl border-2 px-4 py-2 font-medium text-slate-600"
         >
-          <Clapperboard className="h-5 w-5" /> Local Alumni Story (Meerut)
+          <Clapperboard className="h-5 w-5" /> Career Reels (sample stories)
         </button>
       </div>
       <FacilityVerificationModal
