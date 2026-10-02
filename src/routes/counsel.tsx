@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, MapPin, Scale, X } from "lucide-react";
+import { Activity, ChevronDown, MapPin, Scale, X } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { MOCK_TRADES } from "@/data/mockTrades";
 import { SCRIPTS, type Bi, type ChatItem, type Topic } from "@/data/dialogueScripts";
@@ -9,6 +9,7 @@ import { SimulationBottomBar } from "@/components/counsel/SimulationBottomBar";
 import { ParentRoiModal } from "@/components/counsel/ParentRoiModal";
 import { AlumniStoryModal } from "@/components/counsel/AlumniStoryModal";
 import { CounselorTriageModal } from "@/components/counsel/CounselorTriageModal";
+import { ConsensusMathInspector } from "@/components/counsel/ConsensusMathInspector";
 
 export const Route = createFileRoute("/counsel")({
   head: () => ({ meta: [{ title: "Dyadic Dialogue | MitraSkill Family Counselling" }] }),
@@ -38,7 +39,7 @@ const opening = (tradeId: string): DialogueEvent[] => {
 };
 
 function Counsel() {
-  const { lang, setActiveTradeName, setCurrentDivergence } = useApp();
+  const { lang, currentDivergence, setActiveTradeName, setCurrentDivergence } = useApp();
   const [tradeId, setTradeId] = useState("AUTO_MECH_01");
   const [items, setItems] = useState<ChatItem[]>([]);
   const [activity, setActivity] = useState<Activity>(null);
@@ -47,6 +48,7 @@ function Counsel() {
   const [modal, setModal] = useState<"roi" | "alumni" | null>(null);
   const [converged, setConverged] = useState(false);
   const [counselorOpen, setCounselorOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
   const [objectionClicks, setObjectionClicks] = useState(0);
   const [mobilityExplored, setMobilityExplored] = useState(false);
   const [deadlockDismissed, setDeadlockDismissed] = useState(false);
@@ -64,7 +66,7 @@ function Counsel() {
   }, [tradeId, setActiveTradeName]);
   useEffect(() => {
     setCurrentDivergence(converged ? 0.18 : 0.42);
-  }, [converged, setCurrentDivergence]);
+  }, [converged, tradeId, setCurrentDivergence]);
 
   const animateEvents = useCallback(async (events: DialogueEvent[]) => {
     const thisRun = ++runId.current;
@@ -148,23 +150,39 @@ function Counsel() {
                 {lang === "hi" ? selectedTrade.hindi_title : selectedTrade.trade_name}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setDetailsOpen((open) => !open)}
-              aria-expanded={detailsOpen}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold text-navy transition hover:bg-muted"
-            >
-              {detailsOpen
-                ? lang === "hi"
-                  ? "विवरण छिपाएँ"
-                  : "Hide details"
-                : lang === "hi"
-                  ? "ट्रेड और सत्र विवरण"
-                  : "Trade & session details"}
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
-              />
-            </button>
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setInspectorOpen(true)}
+                aria-label={
+                  lang === "hi" ? "गणित निरीक्षक खोलें" : "Open divergence math inspector"
+                }
+                className="group inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-950 transition hover:bg-amber-500/20"
+              >
+                <Activity className="h-3.5 w-3.5 text-amber-700 group-hover:animate-pulse" />
+                <span>Δ {currentDivergence.toFixed(2)}</span>
+                <span className="hidden sm:inline">
+                  · {lang === "hi" ? "गणित जाँचें" : "Inspect math"}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDetailsOpen((open) => !open)}
+                aria-expanded={detailsOpen}
+                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold text-navy transition hover:bg-muted"
+              >
+                {detailsOpen
+                  ? lang === "hi"
+                    ? "विवरण छिपाएँ"
+                    : "Hide details"
+                  : lang === "hi"
+                    ? "ट्रेड और सत्र विवरण"
+                    : "Trade & session details"}
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+            </div>
           </div>
           {detailsOpen && (
             <div className="mt-2 flex flex-wrap items-center gap-2 border-t pt-2">
@@ -184,11 +202,9 @@ function Counsel() {
                   <MapPin className="h-4 w-4" /> Meerut, UP
                 </span>
                 <span className="flex items-center gap-1 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-navy">
-                  <Scale className="h-4 w-4 text-primary" /> Divergence:{" "}
+                  <Scale className="h-4 w-4 text-primary" />
+                  {lang === "hi" ? "सत्र का डेमो माप" : "Session demo measure"}:{" "}
                   {converged ? "0.18" : "0.42"}
-                  <small className="rounded-full bg-primary px-2 py-0.5 text-white">
-                    {converged ? "Convergence reached" : "Arbitration active"}
-                  </small>
                 </span>
               </div>
             </div>
@@ -254,6 +270,13 @@ function Counsel() {
         lang={lang}
         selectedTradeName={selectedTrade.trade_name}
         currentDivergence={converged ? 0.18 : 0.42}
+      />
+      <ConsensusMathInspector
+        isOpen={inspectorOpen}
+        onClose={() => setInspectorOpen(false)}
+        lang={lang}
+        tradeId={selectedTrade.trade_id}
+        onDivergenceChange={setCurrentDivergence}
       />
       {modal === "roi" && <ParentRoiModal onClose={() => setModal(null)} />}
       {modal === "alumni" && <AlumniStoryModal onClose={() => setModal(null)} />}
