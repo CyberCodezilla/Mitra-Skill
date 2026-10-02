@@ -51,11 +51,12 @@ function Counsel() {
     for (const event of events) {
       if (thisRun !== runId.current) return;
       setActivity(event.kind);
-      await delay(event.kind === "arbiter" ? 1450 : 850);
+      const writingTime = Math.min(2800, Math.max(1100, 750 + event.text.en.length * 11));
+      await delay(event.kind === "arbiter" ? 1850 + Math.random() * 700 : writingTime);
       if (thisRun !== runId.current) return;
       const item: ChatItem = { ...event, id: messageId() };
       setItems((current) => [...current, item]);
-      await delay(event.kind === "arbiter" ? 250 : 380);
+      await delay(460 + Math.random() * 320);
     }
     if (thisRun === runId.current) {
       setActivity(null);

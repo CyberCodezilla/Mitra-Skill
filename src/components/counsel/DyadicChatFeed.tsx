@@ -1,13 +1,16 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { GraduationCap, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { GraduationCap, Sparkles, Users } from "lucide-react";
 import type { ChatItem } from "@/data/dialogueScripts";
 import type { Lang } from "@/lib/app-context";
 import { AiArbiterCard } from "./AiArbiterCard";
 
+type Activity = "student" | "parent" | "arbiter" | null;
+
 type Props = {
   items: ChatItem[];
   lang: Lang;
-  activity: "student" | "parent" | "arbiter" | null;
+  activity: Activity;
   endRef: React.RefObject<HTMLDivElement | null>;
   onRoi: () => void;
   onAlumni: () => void;
@@ -18,16 +21,16 @@ export function DyadicChatFeed({ items, lang, activity, endRef, onRoi, onAlumni 
     <div
       data-tour="tour-chat-feed"
       className="mx-auto max-w-5xl space-y-5 px-4 py-6"
-      aria-live="polite"
+      aria-live="off"
     >
       <AnimatePresence initial={false}>
         {items.map((message) => (
           <motion.div
             key={message.id}
             layout
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 14, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 330, damping: 27, mass: 0.75 }}
           >
             {message.kind === "arbiter" ? (
               <AiArbiterCard
@@ -51,70 +54,111 @@ export function DyadicChatFeed({ items, lang, activity, endRef, onRoi, onAlumni 
   );
 }
 
-function TypingIndicator({
-  activity,
-  lang,
-}: {
-  activity: "student" | "parent" | "arbiter";
-  lang: Lang;
-}) {
+function TypingIndicator({ activity, lang }: { activity: Exclude<Activity, null>; lang: Lang }) {
   const arbiter = activity === "arbiter";
-  const label = arbiter
-    ? lang === "hi" ? "MitraSkill Arbiter" : "MitraSkill Arbiter"
-    : activity === "student" ? "Aman · Student" : "Ramesh · Parent";
-  const detail = arbiter
-    ? lang === "hi"
-      ? "आपकी बात समझ रहा है और सत्यापित ट्रेड जानकारी जाँच रहा है"
-      : "Understanding the concern and checking verified trade data"
-    : lang === "hi" ? "संदेश लिख रहे हैं" : "is typing";
+  const [analysisStep, setAnalysisStep] = useState(0);
+
+  useEffect(() => {
+    if (!arbiter) return;
+    const timer = window.setInterval(() => setAnalysisStep((step) => (step + 1) % 3), 1100);
+    return () => window.clearInterval(timer);
+  }, [arbiter]);
+
+  const analysis = lang === "hi"
+    ? ["दोनों की बात समझ रहा है", "अभिभावक की चिंता पर विचार कर रहा है", "सोच-समझकर जवाब तैयार कर रहा है"][analysisStep]
+    : ["Listening to both perspectives", "Considering the parent's concern", "Preparing a thoughtful response"][analysisStep];
+  const speaker = activity === "student" ? "Aman" : "Ramesh";
+
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 12, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -6 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -5 }}
       role="status"
       aria-live="polite"
-      className={`flex ${activity === "parent" ? "flex-row-reverse" : ""}`}
+      className={activity === "parent" ? "flex justify-end" : "flex justify-start"}
     >
-      <div
-        className={`flex max-w-[min(88%,36rem)] items-center gap-3 rounded-2xl border px-4 py-3 shadow-sm ${arbiter ? "border-indigo-200 bg-indigo-50/80 text-indigo-950" : activity === "student" ? "border-blue-200 bg-blue-50/90 text-blue-950" : "border-amber-200 bg-amber-50/90 text-amber-950"}`}
-      >
-        {!arbiter && (
-          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${activity === "student" ? "bg-student-soft text-student" : "bg-parent-soft text-parent"}`}>
-            {activity === "student" ? <GraduationCap className="h-5 w-5" /> : <Users className="h-5 w-5" />}
+      {arbiter ? (
+        <div className="w-full max-w-xl rounded-2xl border border-indigo-200 bg-indigo-50/80 p-4 text-indigo-950 shadow-sm">
+          <div className="flex items-center gap-3">
+            <motion.div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-navy text-white"
+              animate={{ boxShadow: ["0 0 0 0 rgba(232,119,34,0)", "0 0 0 7px rgba(232,119,34,0.12)", "0 0 0 0 rgba(232,119,34,0)"] }}
+              transition={{ duration: 1.8, repeat: Infinity }}
+            >
+              <Sparkles className="h-4 w-4" />
+            </motion.div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold">MitraSkill Arbiter</div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={analysisStep}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="mt-0.5 text-sm text-indigo-900/75"
+                >
+                  {analysis}…
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            <div className="flex h-7 items-end gap-1" aria-hidden="true">
+              {[0, 1, 2, 3].map((bar) => (
+                <motion.span
+                  key={bar}
+                  className="w-1 rounded-full bg-indigo-500/75"
+                  animate={{ height: [7, 20, 10, 16, 7], opacity: [0.45, 1, 0.6, 1, 0.45] }}
+                  transition={{ duration: 1.05, repeat: Infinity, delay: bar * 0.12 }}
+                />
+              ))}
+            </div>
           </div>
-        )}
-        <div>
-          <div className="text-xs font-bold">{label}</div>
-          <div className="mt-1 flex items-center gap-2 text-xs opacity-80">
-            <span>{detail}</span>
-            <span className="flex items-center gap-1" aria-hidden="true">
+          <div className="mt-3 h-1 overflow-hidden rounded-full bg-indigo-100">
+            <motion.div
+              className="h-full w-2/5 rounded-full bg-gradient-to-r from-amber-500 to-indigo-500"
+              animate={{ x: ["-100%", "280%"] }}
+              transition={{ duration: 1.5, ease: "easeInOut", repeat: Infinity }}
+            />
+          </div>
+        </div>
+      ) : (
+        <div
+          className={`flex max-w-[min(88%,36rem)] items-end gap-2.5 ${activity === "parent" ? "flex-row-reverse" : ""}`}
+        >
+          <div
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${activity === "student" ? "bg-student-soft text-student" : "bg-parent-soft text-parent"}`}
+          >
+            {activity === "student" ? (
+              <GraduationCap className="h-5 w-5" />
+            ) : (
+              <Users className="h-5 w-5" />
+            )}
+          </div>
+          <div
+            className={`rounded-2xl border px-4 py-2.5 shadow-sm ${activity === "student" ? "rounded-bl-sm border-blue-200 bg-blue-50/90 text-blue-950" : "rounded-br-sm border-amber-200 bg-amber-50/90 text-amber-950"}`}
+          >
+            <div className="mb-1 text-[11px] font-semibold opacity-70">
+              {lang === "hi" ? `${speaker} कुछ कह रहे हैं…` : `${speaker} is saying something…`}
+            </div>
+            <div className="flex h-4 items-center gap-1.5 px-0.5" aria-hidden="true">
               {[0, 1, 2].map((dot) => (
                 <motion.span
                   key={dot}
-                  className="h-1.5 w-1.5 rounded-full bg-current"
-                  animate={{ opacity: [0.25, 1, 0.25], y: [0, -2, 0] }}
-                  transition={{ duration: 0.85, repeat: Infinity, delay: dot * 0.15 }}
+                  className="h-2 w-2 rounded-full bg-current opacity-60"
+                  animate={{ y: [0, -5, 0], opacity: [0.35, 0.9, 0.35] }}
+                  transition={{ duration: 0.72, ease: "easeInOut", repeat: Infinity, delay: dot * 0.14 }}
                 />
               ))}
-            </span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </motion.div>
   );
 }
 
-function ChatBubble({
-  kind,
-  text,
-  lang,
-}: {
-  kind: "student" | "parent";
-  text: string;
-  lang: Lang;
-}) {
+function ChatBubble({ kind, text, lang }: { kind: "student" | "parent"; text: string; lang: Lang }) {
   const student = kind === "student";
   return (
     <div className={`flex items-start gap-3 ${student ? "" : "flex-row-reverse"}`}>
