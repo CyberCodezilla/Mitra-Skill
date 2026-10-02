@@ -22,7 +22,7 @@ let uid = 0;
 const nid = () => `m${++uid}`;
 
 function openingFor(tradeId: string): ChatItem[] {
-  const o = SCRIPTS[tradeId].opening;
+  const o = SCRIPTS[tradeId]!.opening;
   return [
     { id: nid(), kind: "student", text: o.student },
     { id: nid(), kind: "parent", text: o.parent },
@@ -32,8 +32,8 @@ function openingFor(tradeId: string): ChatItem[] {
 
 function Counsel() {
   const { lang } = useApp();
-  const [tradeId, setTradeId] = useState(MOCK_TRADES[0].trade_id);
-  const [items, setItems] = useState<ChatItem[]>(() => openingFor(MOCK_TRADES[0].trade_id));
+  const [tradeId, setTradeId] = useState(MOCK_TRADES[0]!.trade_id);
+  const [items, setItems] = useState<ChatItem[]>(() => openingFor(MOCK_TRADES[0]!.trade_id));
   const [listening, setListening] = useState(false);
   const [modal, setModal] = useState<null | "roi" | "alumni">(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -52,7 +52,7 @@ function Counsel() {
     if (listening) return;
     setListening(true);
     setTimeout(() => {
-      const s = SCRIPTS[tradeId];
+      const s = SCRIPTS[tradeId]!;
       const next: ChatItem[] = [];
       if (who === "student") {
         next.push({ id: nid(), kind: "student", text: s.studentFollowUp });
