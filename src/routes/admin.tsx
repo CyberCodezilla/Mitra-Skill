@@ -13,6 +13,7 @@ import {
 import { useApp } from "@/lib/app-context";
 import { ResistanceHeatmap } from "@/components/admin/ResistanceHeatmap";
 import { ObjectionBreakdownChart } from "@/components/admin/ObjectionBreakdownChart";
+import { SentimentMigrationChart } from "@/components/admin/SentimentMigrationChart";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "MSDE Administrator Console — MitraSkill" }] }),
@@ -166,6 +167,9 @@ function Admin() {
       <div className="mt-5 grid items-start gap-5 xl:grid-cols-[1.1fr_.9fr]">
         <ResistanceHeatmap lang={lang} district={district} />
         <ObjectionBreakdownChart lang={lang} />
+      </div>
+      <div className="mt-5">
+        <SentimentMigrationChart lang={lang} />
       </div>
       <section className="mt-5 rounded-2xl border bg-white p-5 shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-2">
