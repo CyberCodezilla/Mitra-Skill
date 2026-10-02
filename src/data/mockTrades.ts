@@ -45,7 +45,8 @@ export const MOCK_TRADES: TradeRecord[] = [
     },
     ncrf_mobility: {
       credits_earned: 80,
-      next_academic_step: "Direct 2nd Year Lateral Entry to Polytechnic Diploma in Mechanical/Auto Engg",
+      next_academic_step:
+        "Direct 2nd Year Lateral Entry to Polytechnic Diploma in Mechanical/Auto Engg",
       degree_eligibility: "B.Tech in Automobile Systems (Post-Diploma)",
     },
     parent_reassurance_script: {
@@ -59,7 +60,11 @@ export const MOCK_TRADES: TradeRecord[] = [
     hindi_title: "सोलर पीवी इंस्टॉलेशन तकनीशियन",
     nsqf_level: 4,
     duration_months: 12,
-    curriculum_focus: ["Photovoltaic Inverters", "Grid Tie Installations", "PM Surya Ghar Operations"],
+    curriculum_focus: [
+      "Photovoltaic Inverters",
+      "Grid Tie Installations",
+      "PM Surya Ghar Operations",
+    ],
     verified_metrics: {
       region: "All-India Priority Corridor",
       avg_starting_monthly_inr: 21000,
