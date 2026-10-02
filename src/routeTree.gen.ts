@@ -10,12 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccordRouteImport } from './routes/accord'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CounselRouteImport } from './routes/counsel'
 import { Route as MobilityRouteImport } from './routes/mobility'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccordRoute = AccordRouteImport.update({
+  id: '/accord',
+  path: '/accord',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CounselRoute = CounselRouteImport.update({
@@ -31,30 +43,38 @@ const MobilityRoute = MobilityRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accord': typeof AccordRoute
+  '/admin': typeof AdminRoute
   '/counsel': typeof CounselRoute
   '/mobility': typeof MobilityRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accord': typeof AccordRoute
+  '/admin': typeof AdminRoute
   '/counsel': typeof CounselRoute
   '/mobility': typeof MobilityRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accord': typeof AccordRoute
+  '/admin': typeof AdminRoute
   '/counsel': typeof CounselRoute
   '/mobility': typeof MobilityRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/counsel' | '/mobility'
+  fullPaths: '/' | '/accord' | '/admin' | '/counsel' | '/mobility'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/counsel' | '/mobility'
-  id: '__root__' | '/' | '/counsel' | '/mobility'
+  to: '/' | '/accord' | '/admin' | '/counsel' | '/mobility'
+  id: '__root__' | '/' | '/accord' | '/admin' | '/counsel' | '/mobility'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccordRoute: typeof AccordRoute
+  AdminRoute: typeof AdminRoute
   CounselRoute: typeof CounselRoute
   MobilityRoute: typeof MobilityRoute
 }
@@ -66,6 +86,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accord': {
+      id: '/accord'
+      path: '/accord'
+      fullPath: '/accord'
+      preLoaderRoute: typeof AccordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/counsel': {
@@ -87,6 +121,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccordRoute: AccordRoute,
+  AdminRoute: AdminRoute,
   CounselRoute: CounselRoute,
   MobilityRoute: MobilityRoute,
 }
