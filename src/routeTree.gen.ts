@@ -14,6 +14,7 @@ import { Route as AccordRouteImport } from './routes/accord'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CounselRouteImport } from './routes/counsel'
 import { Route as MobilityRouteImport } from './routes/mobility'
+import { Route as WhatsappRouteImport } from './routes/whatsapp'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,11 @@ const MobilityRoute = MobilityRouteImport.update({
   path: '/mobility',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WhatsappRoute = WhatsappRouteImport.update({
+  id: '/whatsapp',
+  path: '/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/counsel': typeof CounselRoute
   '/mobility': typeof MobilityRoute
+  '/whatsapp': typeof WhatsappRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/counsel': typeof CounselRoute
   '/mobility': typeof MobilityRoute
+  '/whatsapp': typeof WhatsappRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,21 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/counsel': typeof CounselRoute
   '/mobility': typeof MobilityRoute
+  '/whatsapp': typeof WhatsappRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/accord' | '/admin' | '/counsel' | '/mobility'
+  fullPaths: '/' | '/accord' | '/admin' | '/counsel' | '/mobility' | '/whatsapp'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/accord' | '/admin' | '/counsel' | '/mobility'
-  id: '__root__' | '/' | '/accord' | '/admin' | '/counsel' | '/mobility'
+  to: '/' | '/accord' | '/admin' | '/counsel' | '/mobility' | '/whatsapp'
+  id:
+    | '__root__'
+    | '/'
+    | '/accord'
+    | '/admin'
+    | '/counsel'
+    | '/mobility'
+    | '/whatsapp'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +93,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   CounselRoute: typeof CounselRoute
   MobilityRoute: typeof MobilityRoute
+  WhatsappRoute: typeof WhatsappRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +133,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MobilityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/whatsapp': {
+      id: '/whatsapp'
+      path: '/whatsapp'
+      fullPath: '/whatsapp'
+      preLoaderRoute: typeof WhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +149,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   CounselRoute: CounselRoute,
   MobilityRoute: MobilityRoute,
+  WhatsappRoute: WhatsappRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, Moon, Phone, Shield, Sun, X } from "lucide-react";
+import { BookOpen, MessageCircle, Moon, Phone, Shield, Sun, X } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { useTour } from "@/context/TourContext";
 import { PlatformTour } from "@/components/common/PlatformTour";
@@ -71,6 +71,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </Link>
           <div className="flex items-center gap-2">
+            <Link
+              to="/whatsapp"
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/25 bg-emerald-50 px-2.5 py-2 text-xs font-semibold text-emerald-900 transition hover:border-emerald-700 hover:bg-emerald-100 dark:border-emerald-300/25 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-900/60 sm:px-3"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span className="hidden md:inline">WhatsApp Demo</span>
+            </Link>
             <Link
               to={path.startsWith("/admin") ? "/accord" : "/admin"}
               data-tour="tour-admin-link"
