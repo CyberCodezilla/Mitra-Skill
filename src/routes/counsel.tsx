@@ -39,8 +39,16 @@ const opening = (tradeId: string): DialogueEvent[] => {
 };
 
 function Counsel() {
-  const { lang, currentDivergence, setActiveTradeName, setCurrentDivergence } = useApp();
-  const [tradeId, setTradeId] = useState("AUTO_MECH_01");
+  const {
+    lang,
+    currentDivergence,
+    studentAptitude,
+    selectedTradeId,
+    setSelectedTradeId,
+    setActiveTradeName,
+    setCurrentDivergence,
+  } = useApp();
+  const [tradeId, setTradeId] = useState(selectedTradeId);
   const [items, setItems] = useState<ChatItem[]>([]);
   const [activity, setActivity] = useState<Activity>(null);
   const [busy, setBusy] = useState(false);
@@ -54,6 +62,7 @@ function Counsel() {
   const [deadlockDismissed, setDeadlockDismissed] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const runId = useRef(0);
+  const initialTradeId = useRef(tradeId);
   const langRef = useRef(lang);
   langRef.current = lang;
 
@@ -96,7 +105,7 @@ function Counsel() {
   }, []);
 
   useEffect(() => {
-    void animateEvents(opening("AUTO_MECH_01"));
+    void animateEvents(opening(initialTradeId.current));
     return () => {
       runId.current += 1;
     };
@@ -109,6 +118,7 @@ function Counsel() {
   const switchTrade = (next: string) => {
     if (next === tradeId || busy) return;
     setTradeId(next);
+    setSelectedTradeId(next);
     setItems([]);
     setConverged(false);
     void animateEvents(opening(next));
@@ -277,6 +287,7 @@ function Counsel() {
         lang={lang}
         tradeId={selectedTrade.trade_id}
         onDivergenceChange={setCurrentDivergence}
+        studentAptitude={studentAptitude}
       />
       {modal === "roi" && <ParentRoiModal onClose={() => setModal(null)} />}
       <AlumniReelsDrawer

@@ -14,7 +14,7 @@ import {
   type HouseholdParameters,
   type TradeCompetencyProfile,
 } from "@/utils/arbitrationEngine";
-import type { Lang } from "@/lib/app-context";
+import type { AptitudeVector, Lang } from "@/lib/app-context";
 
 type Props = {
   isOpen: boolean;
@@ -22,6 +22,7 @@ type Props = {
   lang: Lang;
   tradeId?: string;
   onDivergenceChange?: (value: number) => void;
+  studentAptitude?: AptitudeVector;
 };
 
 const TRADE_PROFILES: Record<string, TradeCompetencyProfile> = {
@@ -60,6 +61,7 @@ export function ConsensusMathInspector({
   lang,
   tradeId = "AUTO_MECH_01",
   onDivergenceChange,
+  studentAptitude,
 }: Props) {
   const [reservationWage, setReservationWage] = useState(DEFAULTS.reservationWage);
   const [w1, setW1] = useState(DEFAULTS.w1);
@@ -76,7 +78,7 @@ export function ConsensusMathInspector({
   );
   const params: HouseholdParameters = useMemo(
     () => ({
-      student_aptitude: [0.8, 0.94, 0.75, 0.86],
+      student_aptitude: studentAptitude ?? [0.8, 0.94, 0.75, 0.86],
       parent_reservation_wage: reservationWage,
       parent_requires_female_safety: requiresSafety,
       weights: { w1, w2, w3 },
@@ -84,7 +86,7 @@ export function ConsensusMathInspector({
       lambda: 0.05,
       conflict_threshold: threshold,
     }),
-    [reservationWage, requiresSafety, w1, w2, w3, threshold],
+    [reservationWage, requiresSafety, w1, w2, w3, threshold, studentAptitude],
   );
   const result = useMemo(() => evaluateDyadConsensus(trade, params), [trade, params]);
   const weightSum = w1 + w2 + w3 || 1;

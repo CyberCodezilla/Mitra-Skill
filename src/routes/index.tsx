@@ -1,7 +1,20 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { GraduationCap, Users, MapPin, Volume2, ArrowRight, ShieldCheck } from "lucide-react";
+import {
+  GraduationCap,
+  Users,
+  MapPin,
+  Volume2,
+  ArrowRight,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { useApp, type SessionMode } from "@/lib/app-context";
+import {
+  VoiceAptitudeModal,
+  type AptitudeDiscovery,
+} from "@/components/onboard/VoiceAptitudeModal";
+import { MOCK_TRADES } from "@/data/mockTrades";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,10 +37,22 @@ export const Route = createFileRoute("/")({
 });
 
 function Onboarding() {
-  const { lang, t, setMode } = useApp();
+  const {
+    lang,
+    t,
+    setMode,
+    setStudentAptitude,
+    setSelectedTradeId,
+    setActiveTradeName,
+    setAptitudeDiscovered,
+    aptitudeDiscovered,
+    studentAptitude,
+    selectedTradeId,
+  } = useApp();
   const nav = useNavigate();
   const [level, setLevel] = useState(1);
   const [playing, setPlaying] = useState(false);
+  const [aptitudeModalOpen, setAptitudeModalOpen] = useState(false);
   const heroTitle = t.heroTitle[lang];
   const [heroInitial, ...heroRest] = Array.from(heroTitle);
 
@@ -35,6 +60,17 @@ function Onboarding() {
     setMode(m);
     nav({ to: "/counsel" });
   };
+
+  const handleDiscoveryComplete = (result: AptitudeDiscovery) => {
+    setStudentAptitude(result.aptitudeVector);
+    setSelectedTradeId(result.recommendedTradeId);
+    setActiveTradeName(result.tradeName);
+    setAptitudeDiscovered(true);
+    setAptitudeModalOpen(false);
+    setMode("JOINT");
+    nav({ to: "/counsel" });
+  };
+  const selectedTrade = MOCK_TRADES.find((trade) => trade.trade_id === selectedTradeId);
 
   return (
     <div className="bg-hero">
@@ -135,7 +171,35 @@ function Onboarding() {
               [t.qualification[lang], "Class 10th Pass (58%)"],
               [t.aptitude[lang], "Strong spatial & hands-on interest (Machines, EV mechanics)"],
             ]}
-            badge="Aptitude: Mechanical & Diagnostic"
+            badge={
+              aptitudeDiscovered && selectedTrade
+                ? `${lang === "hi" ? "रुचि मेल" : "Interest match"}: ${lang === "hi" ? selectedTrade.hindi_title : selectedTrade.trade_name}`
+                : lang === "hi"
+                  ? "रुचि प्रोफ़ाइल: यांत्रिक एवं डायग्नोस्टिक"
+                  : "Profile seed: Mechanical & Diagnostic"
+            }
+            action={
+              <>
+                <button
+                  type="button"
+                  onClick={() => setAptitudeModalOpen(true)}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-sky-500/35 bg-sky-500/10 px-4 py-3 text-sm font-bold text-sky-900 transition hover:border-sky-600 hover:bg-sky-500/20"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {lang === "hi" ? "बोलकर व्यावहारिक रुचि जानें" : "Discover practical aptitude"}
+                  <span className="rounded-full bg-sky-700 px-2 py-0.5 text-[10px] text-white">
+                    3 {lang === "hi" ? "चरण" : "steps"}
+                  </span>
+                </button>
+                {aptitudeDiscovered && selectedTrade && (
+                  <p className="mt-2 rounded-lg bg-muted/60 p-2 text-xs text-muted-foreground">
+                    {lang === "hi" ? "पिछला रुचि वेक्टर" : "Latest interest vector"}: [
+                    {studentAptitude.map((score) => score.toFixed(2)).join(", ")}] ·{" "}
+                    {lang === "hi" ? selectedTrade.hindi_title : selectedTrade.trade_name}
+                  </p>
+                )}
+              </>
+            }
           />
           <PersonaCard
             tone="parent"
@@ -179,6 +243,12 @@ function Onboarding() {
           </div>
         </section>
       </div>
+      <VoiceAptitudeModal
+        isOpen={aptitudeModalOpen}
+        onClose={() => setAptitudeModalOpen(false)}
+        lang={lang}
+        onCompleteDiscovery={handleDiscoveryComplete}
+      />
     </div>
   );
 }
@@ -190,6 +260,7 @@ function PersonaCard({
   name,
   rows,
   badge,
+  action,
 }: {
   tone: "student" | "parent";
   icon: React.ReactNode;
@@ -197,6 +268,7 @@ function PersonaCard({
   name: string;
   rows: [string, string][];
   badge: string;
+  action?: React.ReactNode;
 }) {
   const s =
     tone === "student"
@@ -230,6 +302,7 @@ function PersonaCard({
         >
           {badge}
         </span>
+        {action}
       </div>
     </article>
   );

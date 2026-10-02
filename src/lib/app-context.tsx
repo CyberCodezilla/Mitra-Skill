@@ -2,6 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 
 export type Lang = "en" | "hi";
 export type SessionMode = "JOINT" | "STUDENT" | "PARENT";
+export type AptitudeVector = [number, number, number, number];
 
 const STRINGS = {
   subtitle: {
@@ -50,6 +51,12 @@ type Ctx = {
   setActiveTradeName: (name: string) => void;
   currentDivergence: number;
   setCurrentDivergence: (value: number) => void;
+  studentAptitude: AptitudeVector;
+  setStudentAptitude: (value: AptitudeVector) => void;
+  selectedTradeId: string;
+  setSelectedTradeId: (value: string) => void;
+  aptitudeDiscovered: boolean;
+  setAptitudeDiscovered: (value: boolean) => void;
   t: typeof STRINGS;
 };
 
@@ -60,6 +67,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<SessionMode>("JOINT");
   const [activeTradeName, setActiveTradeName] = useState("Automotive Mechatronics");
   const [currentDivergence, setCurrentDivergence] = useState(0.42);
+  const [studentAptitude, setStudentAptitude] = useState<AptitudeVector>([0.8, 0.94, 0.75, 0.86]);
+  const [selectedTradeId, setSelectedTradeId] = useState("AUTO_MECH_01");
+  const [aptitudeDiscovered, setAptitudeDiscovered] = useState(false);
   return (
     <AppCtx.Provider
       value={{
@@ -71,6 +81,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setActiveTradeName,
         currentDivergence,
         setCurrentDivergence,
+        studentAptitude,
+        setStudentAptitude,
+        selectedTradeId,
+        setSelectedTradeId,
+        aptitudeDiscovered,
+        setAptitudeDiscovered,
         t: STRINGS,
       }}
     >
