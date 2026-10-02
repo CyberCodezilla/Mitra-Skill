@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>MitraSkill education crest</title>
+  <rect width="64" height="64" rx="14" fill="#17324d"/>
+  <path d="M10 24 32 13l22 11-22 11z" fill="#f59e0b"/>
+  <path d="M17 31v12c8 7 22 7 30 0V31l-15 8z" fill="#fff"/>
+  <path d="M52 27v13" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="52" cy="43" r="3" fill="#f59e0b"/>
+</svg>
