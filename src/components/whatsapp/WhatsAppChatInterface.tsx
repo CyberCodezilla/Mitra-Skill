@@ -17,6 +17,8 @@ import {
   WAMessage,
   DEFAULT_INITIAL_MESSAGES,
   SCENARIO_CHIPS,
+  FALLBACK_RESPONSE_BI,
+  resolveText,
   type ScenarioChip,
 } from "@/data/mockWhatsAppFlow";
 import { WhatsAppVoiceBubble } from "./WhatsAppVoiceBubble";
@@ -24,23 +26,8 @@ import { WhatsAppCardBubble } from "./WhatsAppCardBubble";
 import { useLanguageVoice, type SupportedLanguage } from "@/context/LanguageVoiceContext";
 
 const getChipLabel = (chip: ScenarioChip, lang: SupportedLanguage) => {
-  if (lang === "mr") {
-    if (chip.id === "CHIP_SALARY") return "💰 पगार किती मिळेल? (Salary)";
-    if (chip.id === "CHIP_STIGMA") return "👔 गॅरेजचे काम आहे का? (Stigma)";
-    if (chip.id === "CHIP_DEGREE") return "🎓 पुढे पदवी मिळेल का? (Degree)";
-    if (chip.id === "CHIP_SAFETY") return "🛡️ मुलींसाठी सुरक्षित आहे? (Safety)";
-  }
-  if (lang === "bn") {
-    if (chip.id === "CHIP_SALARY") return "💰 বেতন কত পাওয়া যাবে? (Salary)";
-    if (chip.id === "CHIP_STIGMA") return "👔 রাস্তার মেকানিকের কাজ? (Stigma)";
-    if (chip.id === "CHIP_DEGREE") return "🎓 পরে ডিগ্রি মিলবে কি? (Degree)";
-    if (chip.id === "CHIP_SAFETY") return "🛡️ মেয়েদের জন্য নিরাপদ? (Safety)";
-  }
-  if (lang === "ta") {
-    if (chip.id === "CHIP_SALARY") return "💰 தொடக்க ஊதியம் எவ்வளவு? (Salary)";
-    if (chip.id === "CHIP_STIGMA") return "👔 மெக்கானிக் வேலையா? (Stigma)";
-    if (chip.id === "CHIP_DEGREE") return "🎓 பட்டம் பெற முடியுமா? (Degree)";
-    if (chip.id === "CHIP_SAFETY") return "🛡️ பெண்களுக்கு பாதுகாப்பானதா? (Safety)";
+  if (chip.labelBi) {
+    return chip.labelBi[lang] || chip.labelBi.hi || chip.label_hi;
   }
   if (lang === "en") return chip.label_en;
   return chip.label_hi;
@@ -101,9 +88,23 @@ export const WhatsAppChatInterface: React.FC<WhatsAppChatInterfaceProps> = ({
     // 1. Append user query
     setMessages((prev) => [...prev, chip.userMessage]);
 
-    // 2. Set bot status to recording/typing
+    // 2. Set bot status to recording/typing in active language
+    const isVoice = chip.botReplies[0]?.type === "voice";
+    const recText =
+      language === "en" ? "recording audio..." :
+      language === "mr" ? "ऑडिओ रेकॉर्ड करत आहे..." :
+      language === "bn" ? "অডিও রেকর্ড করছে..." :
+      language === "ta" ? "ஆடியோ பதிவு செய்கிறது..." :
+      "ऑडियो रिकॉर्ड कर रहे हैं...";
+    const typText =
+      language === "en" ? "typing..." :
+      language === "mr" ? "टाइप करत आहे..." :
+      language === "bn" ? "টাইপ করছে..." :
+      language === "ta" ? "தட்டச்சு செய்கிறது..." :
+      "टाइप कर रहे हैं...";
+
     setIsTyping(true);
-    setTypingText(chip.botReplies[0]?.type === "voice" ? "recording audio..." : "typing...");
+    setTypingText(isVoice ? recText : typText);
 
     // 3. Resolve reply after 1.2s delay
     if (typingTimerRef.current !== null) clearTimeout(typingTimerRef.current);
@@ -150,7 +151,13 @@ export const WhatsAppChatInterface: React.FC<WhatsAppChatInterfaceProps> = ({
     setMessages((prev) => [...prev, userMsg]);
     setInputText("");
     setIsTyping(true);
-    setTypingText("typing...");
+    setTypingText(
+      language === "en" ? "typing..." :
+      language === "mr" ? "टाइप करत आहे..." :
+      language === "bn" ? "টাইপ করছে..." :
+      language === "ta" ? "தட்டச்சு செய்கிறது..." :
+      "टाइप कर रहे हैं..."
+    );
 
     if (typingTimerRef.current !== null) clearTimeout(typingTimerRef.current);
     typingTimerRef.current = window.setTimeout(() => {
@@ -161,7 +168,8 @@ export const WhatsAppChatInterface: React.FC<WhatsAppChatInterfaceProps> = ({
           id: `b_resp_${Date.now()}`,
           sender: "bot",
           type: "text",
-          text: "धन्यवाद रमेश जी। आपके प्रश्न के लिए हमारे पास सत्यापित डेटा उपलब्ध है। आप ऊपर दिए गए त्वरित बटनों (Chips) को दबाकर वेतन, प्रतिष्ठा और सुरक्षा के अधिकृत आंकड़े देख सकते हैं।",
+          textBi: FALLBACK_RESPONSE_BI,
+          text: FALLBACK_RESPONSE_BI[language] || FALLBACK_RESPONSE_BI.hi,
           timestamp: "10:22 AM",
           status: "read",
           isRead: true,
@@ -204,7 +212,17 @@ export const WhatsAppChatInterface: React.FC<WhatsAppChatInterfaceProps> = ({
               className="text-[10px] leading-tight truncate transition-colors"
               style={{ color: theme.appBarSubtext }}
             >
-              {isTyping ? typingText : "Official Business Account • online"}
+              {isTyping
+                ? typingText
+                : language === "en"
+                ? "Official Business Account • online"
+                : language === "mr"
+                ? "अधिकृत व्यवसाय खाते • ऑनलाइन"
+                : language === "bn"
+                ? "অফিসিয়াল বিজনেস অ্যাকাউন্ট • অনলাইন"
+                : language === "ta"
+                ? "அதிகாரப்பூர்வ வணிகக் கணக்கு • ஆன்லைன்"
+                : "आधिकारिक व्यवसाय खाता • ऑनलाइन"}
             </span>
           </div>
         </div>
@@ -255,7 +273,17 @@ export const WhatsAppChatInterface: React.FC<WhatsAppChatInterfaceProps> = ({
             }}
           >
             <Lock className="w-3 h-3 flex-shrink-0" />
-            <span>Messages are end-to-end encrypted under MSDE Student Privacy Protocol.</span>
+            <span>
+              {language === "en"
+                ? "Messages are end-to-end encrypted under MSDE Student Privacy Protocol."
+                : language === "mr"
+                ? "संदेश MSDE विद्यार्थी गोपनीयता प्रोटोकॉल अंतर्गत एंड-टू-एंड एनक्रिप्टेड आहेत."
+                : language === "bn"
+                ? "বার্তাগুলি MSDE শিক্ষার্থী গোপনীয়তা প্রোটোকলের অধীনে সম্পূর্ণ সুরক্ষিত (End-to-End Encrypted)।"
+                : language === "ta"
+                ? "செய்திகள் MSDE மாணவர் தனியுரிமை நெறிமுறையின் கீழ் முழுமையாக குறியாக்கம் செய்யப்பட்டுள்ளன."
+                : "संदेश MSDE छात्र गोपनीयता प्रोटोकॉल के तहत एंड-टू-एंड एन्क्रिप्टेड हैं।"}
+            </span>
           </div>
         </div>
 
@@ -268,7 +296,7 @@ export const WhatsAppChatInterface: React.FC<WhatsAppChatInterfaceProps> = ({
                 sender={msg.sender}
                 voiceDuration={msg.voiceDuration ?? "0:15"}
                 waveform={msg.waveform}
-                transcription={msg.text}
+                transcription={resolveText(msg, language)}
                 timestamp={msg.timestamp}
                 theme={theme}
               />
@@ -312,7 +340,7 @@ export const WhatsAppChatInterface: React.FC<WhatsAppChatInterfaceProps> = ({
                     backgroundColor: isUser ? theme.userBubbleBg : theme.botBubbleBg,
                   }}
                 />
-                <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                <p className="leading-relaxed whitespace-pre-wrap">{resolveText(msg, language)}</p>
                 <div
                   className="text-[9px] text-right mt-1 font-mono flex items-center justify-end gap-1 opacity-70"
                   style={{ color: theme.timestampText }}
@@ -389,7 +417,13 @@ export const WhatsAppChatInterface: React.FC<WhatsAppChatInterfaceProps> = ({
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="संदेश लिखें (Type a message)..."
+            placeholder={
+              language === "en" ? "Type a message..." :
+              language === "mr" ? "संदेश लिहा (Type a message)..." :
+              language === "bn" ? "বার্তা লিখুন (Type a message)..." :
+              language === "ta" ? "செய்தி எழுதுங்கள் (Type a message)..." :
+              "संदेश लिखें (Type a message)..."
+            }
             className="flex-1 bg-transparent border-none outline-none text-xs placeholder:text-slate-400"
             style={{ color: theme.inputFieldText }}
           />

@@ -14,6 +14,20 @@ interface WhatsAppVoiceBubbleProps {
   theme: WAThemeTokens;
 }
 
+const parseDurationSeconds = (dur: string, text?: string): number => {
+  const parts = dur.split(":").map(Number);
+  let parsedSec = 15;
+  if (parts.length === 2 && !isNaN(parts[0]!) && !isNaN(parts[1]!)) {
+    parsedSec = parts[0]! * 60 + parts[1]!;
+  }
+  if (text && text.trim().length > 0) {
+    // Average speaking rate in Indic languages is ~11-13 chars per second
+    const textSec = Math.max(4, Math.round(text.trim().length / 11));
+    return Math.max(parsedSec, textSec);
+  }
+  return Math.max(4, parsedSec);
+};
+
 export const WhatsAppVoiceBubble: React.FC<WhatsAppVoiceBubbleProps> = ({
   sender,
   voiceDuration,
@@ -36,7 +50,10 @@ export const WhatsAppVoiceBubble: React.FC<WhatsAppVoiceBubbleProps> = ({
   const bubbleBg = isUser ? theme.userBubbleBg : theme.botBubbleBg;
   const textColor = isUser ? theme.userBubbleText : theme.botBubbleText;
 
-  // Speech synthesis integration with persona calibration
+  const speedFactor = playbackSpeed === "2x" ? 2.0 : playbackSpeed === "1.5x" ? 1.5 : 1.0;
+  const totalSeconds = parseDurationSeconds(voiceDuration, transcription);
+
+  // Speech synthesis integration with persona calibration and zero-truncation guarantee
   useEffect(() => {
     if (!isPlaying) {
       stop();
@@ -45,33 +62,43 @@ export const WhatsAppVoiceBubble: React.FC<WhatsAppVoiceBubbleProps> = ({
 
     if (transcription) {
       const persona: PersonaId = isUser ? "parent_ramesh" : "arbiter";
-      speak(transcription, persona, language, () => {
-        setIsPlaying(false);
-        setPlaybackProgress(100);
-      });
+      speak(
+        transcription,
+        persona,
+        language,
+        () => {
+          setIsPlaying(false);
+          setPlaybackProgress(100);
+        },
+        speedFactor,
+      );
     }
-  }, [isPlaying, isUser, language, speak, stop, transcription]);
+  }, [isPlaying, isUser, language, speak, stop, transcription, speedFactor]);
 
-
+  // Smooth, non-truncating progress bar ticker
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isPlaying) {
-      const step = playbackSpeed === "2x" ? 5 : playbackSpeed === "1.5x" ? 3.5 : 2.5;
+      const effectiveSec = totalSeconds / speedFactor;
+      // Step increment every 100ms
+      const step = (0.1 / effectiveSec) * 100;
       interval = setInterval(() => {
         setPlaybackProgress((prev) => {
-          if (prev >= 100) {
-            setIsPlaying(false);
-            return 0;
+          // Cap at 98% during active synthesis so speech completion callback (onEnd) triggers true 100%
+          if (prev >= 98) {
+            return 98;
           }
-          return prev + step;
+          return Math.min(98, prev + step);
         });
-      }, 200);
+      }, 100);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, playbackSpeed]);
+  }, [isPlaying, speedFactor, totalSeconds]);
 
   const togglePlay = () => {
-    if (playbackProgress >= 100) setPlaybackProgress(0);
+    if (playbackProgress >= 100) {
+      setPlaybackProgress(0);
+    }
     setIsPlaying(!isPlaying);
   };
 
@@ -90,6 +117,11 @@ export const WhatsAppVoiceBubble: React.FC<WhatsAppVoiceBubbleProps> = ({
       setIsPlaying(true);
     }
   };
+
+  const elapsedSec = Math.min(totalSeconds, Math.floor((playbackProgress / 100) * totalSeconds));
+  const displayTime = isPlaying
+    ? `0:${elapsedSec.toString().padStart(2, "0")}`
+    : voiceDuration;
 
   return (
     <div className={`flex w-full my-1.5 select-none ${isUser ? "justify-end" : "justify-start"}`}>
@@ -177,13 +209,7 @@ export const WhatsAppVoiceBubble: React.FC<WhatsAppVoiceBubbleProps> = ({
           style={{ color: theme.timestampText }}
         >
           <div className="flex items-center gap-2">
-            <span className="tabular-nums font-mono">
-              {isPlaying
-                ? `0:${Math.floor((playbackProgress / 100) * 24)
-                    .toString()
-                    .padStart(2, "0")}`
-                : voiceDuration}
-            </span>
+            <span className="tabular-nums font-mono">{displayTime}</span>
             <button
               type="button"
               onClick={toggleSpeed}

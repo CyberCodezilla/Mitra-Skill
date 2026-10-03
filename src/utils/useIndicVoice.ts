@@ -54,7 +54,13 @@ function splitIntoChunks(text: string): string[] {
 const KEEPALIVE_INTERVAL_MS = 10_000;
 
 export interface SpeakFunction {
-  (text: string, persona?: PersonaId, customLang?: SupportedLanguage, onEnd?: () => void): void;
+  (
+    text: string,
+    persona?: PersonaId,
+    customLang?: SupportedLanguage,
+    onEnd?: () => void,
+    rateMultiplier?: number,
+  ): void;
   (text: string, lang?: SupportedLanguage, onEnd?: () => void): void;
 }
 
@@ -135,27 +141,37 @@ export function useIndicVoice() {
     (lang: SupportedLanguage, targetGender: "male" | "female"): SpeechSynthesisVoice | null => {
       if (voices.length === 0) return null;
 
-      const localeMap: Record<SupportedLanguage, string> = {
-        en: "en-IN",
-        hi: "hi-IN",
-        mr: "mr-IN",
-        bn: "bn-IN",
-        ta: "ta-IN",
+      const localeMap: Record<SupportedLanguage, string[]> = {
+        en: ["en-in", "en-gb", "en-us"],
+        hi: ["hi-in", "hi"],
+        mr: ["mr-in", "mr"],
+        bn: ["bn-in", "bn-bd", "bn"],
+        ta: ["ta-in", "ta-lk", "ta-sg", "ta"],
       };
 
-      const targetLocale = localeMap[lang];
-      const langMatches = voices.filter(
-        (v) =>
-          v.lang.toLowerCase() === targetLocale.toLowerCase() ||
-          v.lang.toLowerCase().replace("_", "-") === targetLocale.toLowerCase() ||
-          v.lang.toLowerCase().startsWith(lang),
-      );
+      const langNameKeywords: Record<SupportedLanguage, string[]> = {
+        en: ["indian", "india", "english"],
+        hi: ["hindi", "हिन्दी"],
+        mr: ["marathi", "मराठी"],
+        bn: ["bengali", "bangla", "বাংলা"],
+        ta: ["tamil", "தமிழ்"],
+      };
 
-      const candidateList =
-        langMatches.length > 0 ? langMatches : voices.filter((v) => v.lang.toUpperCase().includes("IN"));
+      const targetLocales = localeMap[lang] || ["en-in"];
+      const targetKeywords = langNameKeywords[lang] || [];
 
-      if (candidateList.length === 0) return voices[0] || null;
+      // 1. Direct language matches via BCP-47 tag or voice name
+      const directMatches = voices.filter((v) => {
+        const vLang = v.lang.toLowerCase().replace("_", "-");
+        const vName = v.name.toLowerCase();
+        const matchesLocale = targetLocales.some(
+          (loc) => vLang === loc || vLang.startsWith(loc) || vLang.startsWith(lang),
+        );
+        const matchesKeyword = targetKeywords.some((kw) => vName.includes(kw));
+        return matchesLocale || matchesKeyword;
+      });
 
+      // 2. Gender hints tailored for Indian TTS engines (Microsoft, Google, Apple)
       const femaleHints = [
         "female",
         "swara",
@@ -165,6 +181,19 @@ export function useIndicVoice() {
         "kalpana",
         "kavita",
         "ananya",
+        "aarohi",
+        "pallavi",
+        "tanisha",
+        "heera",
+        "diti",
+        "rashmi",
+        "shreya",
+        "neerja",
+        "sapna",
+        "jaya",
+        "sunita",
+        "woman",
+        "girl",
       ];
       const maleHints = [
         "male",
@@ -175,14 +204,49 @@ export function useIndicVoice() {
         "george",
         "valluvar",
         "hemant",
+        "bashkar",
+        "bhaskar",
+        "manohar",
+        "kavya",
+        "prabhat",
+        "mohan",
+        "karthik",
+        "man",
+        "boy",
       ];
       const targetHints = targetGender === "female" ? femaleHints : maleHints;
 
-      const genderMatch = candidateList.find((v) =>
-        targetHints.some((hint) => v.name.toLowerCase().includes(hint)),
-      );
+      // If we have direct language matches, pick best gender match among them
+      if (directMatches.length > 0) {
+        const genderMatch = directMatches.find((v) =>
+          targetHints.some((hint) => v.name.toLowerCase().includes(hint)),
+        );
+        return genderMatch || directMatches[0] || null;
+      }
 
-      return genderMatch || candidateList[0] || null;
+      // 3. Fallback to any Indian/Indic accented voice (e.g. en-IN, hi-IN) to maintain authentic accent
+      const indianVoices = voices.filter((v) => {
+        const vLang = v.lang.toUpperCase();
+        const vName = v.name.toLowerCase();
+        return (
+          vLang.includes("IN") ||
+          vName.includes("india") ||
+          vName.includes("indian") ||
+          vName.includes("hindi") ||
+          vName.includes("ravi") ||
+          vName.includes("kalpana") ||
+          vName.includes("hemant")
+        );
+      });
+
+      if (indianVoices.length > 0) {
+        const genderMatch = indianVoices.find((v) =>
+          targetHints.some((hint) => v.name.toLowerCase().includes(hint)),
+        );
+        return genderMatch || indianVoices[0] || null;
+      }
+
+      return voices[0] || null;
     },
     [voices],
   );
@@ -215,23 +279,32 @@ export function useIndicVoice() {
     currentUtteranceRef.current = utterance;
 
     const matchedVoice = selectBestVoice(config.lang, config.targetGender);
+    const localeFallback: Record<SupportedLanguage, string> = {
+      en: "en-IN",
+      hi: "hi-IN",
+      mr: "mr-IN",
+      bn: "bn-IN",
+      ta: "ta-IN",
+    };
+
     if (matchedVoice) {
       utterance.voice = matchedVoice;
-      utterance.lang = matchedVoice.lang;
+      // If voice language matches target language, use voice's language
+      if (matchedVoice.lang.toLowerCase().startsWith(config.lang.toLowerCase())) {
+        utterance.lang = matchedVoice.lang;
+      } else {
+        // Voice is fallback (e.g. Indian English for regional text): explicitly set target locale
+        // so the OS synthesizer parses the script phonemes correctly
+        utterance.lang = localeFallback[config.lang];
+      }
     } else {
-      const localeFallback: Record<SupportedLanguage, string> = {
-        en: "en-IN",
-        hi: "hi-IN",
-        mr: "mr-IN",
-        bn: "bn-IN",
-        ta: "ta-IN",
-      };
       utterance.lang = localeFallback[config.lang];
     }
 
-    // Apply demographic-calibrated DSP pitch and tempo
+    // Apply demographic-calibrated DSP pitch and tempo with rate multiplier
     utterance.pitch = config.pitch;
-    utterance.rate = config.rate;
+    const finalRate = Math.min(2.5, Math.max(0.5, config.rate * (config.rateMultiplier || 1.0)));
+    utterance.rate = finalRate;
 
     let finished = false;
     const handleChunkFinish = () => {
@@ -244,7 +317,7 @@ export function useIndicVoice() {
         if (isPlayingRef.current) {
           playNextChunk();
         }
-      }, 80);
+      }, 70);
     };
 
     utterance.onstart = () => {
@@ -268,6 +341,7 @@ export function useIndicVoice() {
       personaOrLang?: PersonaId | SupportedLanguage,
       customLangOrOnEnd?: SupportedLanguage | (() => void),
       onEndCallback?: () => void,
+      rateMultiplier?: number,
     ) => {
       let onEnd: (() => void) | undefined = onEndCallback;
       if (typeof customLangOrOnEnd === "function") {
@@ -307,6 +381,7 @@ export function useIndicVoice() {
         targetGender,
         pitch: profile.pitch,
         rate: profile.rate,
+        rateMultiplier: rateMultiplier || 1.0,
       };
 
       // Split text into safe chunks

@@ -1,13 +1,22 @@
 import React from "react";
 import { CheckCircle2, TrendingUp, Building2, ExternalLink } from "lucide-react";
 import type { WAThemeTokens } from "./whatsappTheme";
+import { useLanguageVoice, type SupportedLanguage } from "@/context/LanguageVoiceContext";
+import type { Bi } from "@/data/mockWhatsAppFlow";
 
 interface WhatsAppCardBubbleProps {
   cardData: {
     tradeTitle: string;
-    metrics: { label: string; value: string; icon: string }[];
-    auditTag: string;
-    actionButtons: string[];
+    metricsBi?: {
+      label: Bi;
+      value: Bi;
+      icon: string;
+    }[];
+    metrics?: { label: string; value: string; icon: string }[];
+    auditTagBi?: Bi;
+    auditTag?: string;
+    actionButtonsBi?: Bi[];
+    actionButtons?: string[];
   };
   timestamp: string;
   theme: WAThemeTokens;
@@ -21,12 +30,35 @@ const renderMetricIcon = (iconName: string) => {
   return <span className="text-emerald-500 font-bold mt-0.5 shrink-0">•</span>;
 };
 
+/** Resolve a Bi object to the active language, falling back hi → en */
+function resolveBi(bi: Bi | undefined, fallback: string, lang: SupportedLanguage): string {
+  if (!bi) return fallback;
+  return bi[lang] || bi.hi || bi.en || fallback;
+}
+
 export const WhatsAppCardBubble: React.FC<WhatsAppCardBubbleProps> = ({
   cardData,
   timestamp,
   theme,
   onActionClick,
 }) => {
+  const { language } = useLanguageVoice();
+
+  // Resolve metrics: prefer localized metricsBi, fallback to legacy metrics
+  const resolvedMetrics = cardData.metricsBi
+    ? cardData.metricsBi.map((m) => ({
+        label: resolveBi(m.label, "", language),
+        value: resolveBi(m.value, "", language),
+        icon: m.icon,
+      }))
+    : cardData.metrics || [];
+
+  const resolvedAuditTag = resolveBi(cardData.auditTagBi, cardData.auditTag || "", language);
+
+  const resolvedButtons = cardData.actionButtonsBi
+    ? cardData.actionButtonsBi.map((bi) => resolveBi(bi, "", language))
+    : cardData.actionButtons || [];
+
   return (
     <div className="flex w-full my-1.5 justify-start select-none">
       <div
@@ -57,7 +89,7 @@ export const WhatsAppCardBubble: React.FC<WhatsAppCardBubbleProps> = ({
 
         {/* Metrics List */}
         <div className="p-3 space-y-2">
-          {cardData.metrics.map((m, idx) => (
+          {resolvedMetrics.map((m, idx) => (
             <div key={idx} className="flex items-start gap-2 text-xs">
               {renderMetricIcon(m.icon)}
               <div>
@@ -67,13 +99,13 @@ export const WhatsAppCardBubble: React.FC<WhatsAppCardBubbleProps> = ({
             </div>
           ))}
           <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold pt-1">
-            {cardData.auditTag}
+            {resolvedAuditTag}
           </p>
         </div>
 
         {/* Interactive Action Buttons */}
         <div className="border-t" style={{ borderColor: theme.cardDivider }}>
-          {cardData.actionButtons.map((btn, bIdx) => (
+          {resolvedButtons.map((btn, bIdx) => (
             <button
               key={bIdx}
               type="button"
