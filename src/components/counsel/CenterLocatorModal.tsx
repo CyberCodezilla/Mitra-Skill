@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { MOCK_CENTERS, type TrainingCenterRecord } from "@/data/mockCenters";
 import type { Lang } from "@/lib/app-context";
+import type { SupportedLanguage } from "@/context/LanguageVoiceContext";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +29,7 @@ export function CenterLocatorModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  lang?: Lang;
+  lang?: SupportedLanguage | Lang;
 }) {
   const hi = lang === "hi";
   const [radius, setRadius] = useState<RadiusFilter>("under10");
@@ -167,7 +168,7 @@ function CenterCard({
   onReserve,
 }: {
   center: TrainingCenterRecord;
-  lang: Lang;
+  lang: SupportedLanguage | Lang;
   token: string | null;
   onReserve: () => void;
 }) {

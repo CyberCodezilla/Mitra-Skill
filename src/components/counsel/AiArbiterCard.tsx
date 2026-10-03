@@ -43,6 +43,86 @@ export function Equalizer() {
 
 const processIcons = [GraduationCap, HeartHandshake, Database, Scale];
 
+const ANALYSIS_STEPS: Record<SupportedLanguage, string[]> = {
+  en: [
+    "Understand the student's goal",
+    "Identify the family's concern",
+    "Check verified trade evidence",
+    "Shape a balanced response",
+  ],
+  hi: [
+    "छात्र के लक्ष्य को समझना",
+    "परिवार की चिंता पहचानना",
+    "ट्रेड के सत्यापित तथ्य जाँचना",
+    "संतुलित जवाब तैयार करना",
+  ],
+  mr: [
+    "विद्यार्थ्याचे ध्येय समजून घेणे",
+    "पालकांची चिंता ओळखणे",
+    "प्रमाणित कौशल्य तथ्ये तपासणे",
+    "संतुलित उत्तर तयार करणे",
+  ],
+  bn: [
+    "ছাত্রের লক্ষ্য বিশ্লেষণ করা",
+    "অভিভাবকের উদ্বেগ চিহ্নিত করা",
+    "যাচাইকৃত কোর্সের তথ্য যাচাই করা",
+    "ভারসাম্যপূর্ণ উত্তর প্রস্তুত করা",
+  ],
+  ta: [
+    "மாணவரின் இலக்கை புரிந்துகொள்ளுதல்",
+    "பெற்றோரின் கவலையை அறிதல்",
+    "சரிபார்க்கப்பட்ட தொழில் சான்றுகளை ஆய்வு செய்தல்",
+    "சமநிலையான பதிலை உருவாக்குதல்",
+  ],
+};
+
+const STATUS_TEXTS: Record<
+  SupportedLanguage,
+  {
+    generating: string;
+    beforeResponse: string;
+    weighing: string;
+    speakingStop: string;
+    escalate: string;
+  }
+> = {
+  en: {
+    generating: "Building a balanced response",
+    beforeResponse: "Before responding",
+    weighing: "Weighing both perspectives against the trade facts",
+    speakingStop: "Arbiter Speaking · stop",
+    escalate: "Escalate to District Counsellor",
+  },
+  hi: {
+    generating: "जवाब तैयार हो रहा है",
+    beforeResponse: "जवाब देने से पहले",
+    weighing: "दोनों पक्षों और ट्रेड के तथ्यों को साथ देख रहा है",
+    speakingStop: "आर्बिटर बोल रहा है · रोकें",
+    escalate: "जिला काउंसलर से बात करें",
+  },
+  mr: {
+    generating: "संतुलित उत्तर तयार होत आहे",
+    beforeResponse: "उत्तर देण्यापूर्वी",
+    weighing: "दोन्ही बाजू आणि कौशल्याची सत्यता पडताळत आहे",
+    speakingStop: "लवाद बोलत आहे · थांबवा",
+    escalate: "जिल्हा समुपदेशकांशी बोला",
+  },
+  bn: {
+    generating: "ভারসাম্যপূর্ণ প্রতিক্রিয়া তৈরি হচ্ছে",
+    beforeResponse: "উত্তর দেওয়ার আগে",
+    weighing: "উভয় দৃষ্টিভঙ্গি ও কোর্সের সত্যতা যাচাই করা হচ্ছে",
+    speakingStop: "সালিশকারী বলছেন · থামান",
+    escalate: "জেলা কাউন্সেলরের সাথে কথা বলুন",
+  },
+  ta: {
+    generating: "சமநிலையான பதில் தயாராகிறது",
+    beforeResponse: "பதிலளிப்பதற்கு முன்",
+    weighing: "இரு தரப்பு கருத்துக்களையும் தொழில் உண்மைகளையும் ஒப்பிடுகிறது",
+    speakingStop: "மத்தியஸ்தர் பேசுகிறார் · நிறுத்து",
+    escalate: "மாவட்ட ஆலோசகரிடம் தொடர்பு கொள்ளவும்",
+  },
+};
+
 export function AiArbiterCard({
   tradeId,
   text,
@@ -55,7 +135,7 @@ export function AiArbiterCard({
   tradeId: string;
   text: Bi;
   isGenerating?: boolean;
-  lang: Lang;
+  lang: SupportedLanguage | Lang;
   onRoi: () => void;
   onAlumni: () => void;
   onEscalate: () => void;
@@ -68,32 +148,31 @@ export function AiArbiterCard({
   const { t: ui } = useTranslation();
   const c = ui.counsel;
   const activeLang: SupportedLanguage =
-    (language in DYADIC_DIALOGUES ? language : (lang as SupportedLanguage)) || "hi";
+    (language in DYADIC_DIALOGUES
+      ? language
+      : (lang as SupportedLanguage)) || "hi";
   const dialogue = DYADIC_DIALOGUES[activeLang] || DYADIC_DIALOGUES.hi;
+  const statusText = STATUS_TEXTS[activeLang] || STATUS_TEXTS.hi;
+  const steps = ANALYSIS_STEPS[activeLang] || ANALYSIS_STEPS.hi;
+
+  const trade = MOCK_TRADES.find((item) => item.trade_id === tradeId)!;
+  const metrics = trade.verified_metrics;
+
+  const arbiterText =
+    text[activeLang] || text.hi || text.en || dialogue.arbiterRebuttal;
+  const reassuranceText =
+    trade.parent_reassurance_script?.[activeLang] ||
+    trade.parent_reassurance_script?.hi ||
+    trade.parent_reassurance_script?.en ||
+    c.arbiterReassurance;
 
   const handlePlayArbiter = () => {
     if (isSpeaking && currentSpeakingPersona === "arbiter") {
       stop();
     } else {
-      speak(text[lang] || dialogue.arbiterRebuttal, "arbiter", activeLang);
+      speak(arbiterText, "arbiter", activeLang);
     }
   };
-  const trade = MOCK_TRADES.find((item) => item.trade_id === tradeId)!;
-  const metrics = trade.verified_metrics;
-  const steps =
-    lang === "hi"
-      ? [
-          "छात्र के लक्ष्य को समझना",
-          "परिवार की चिंता पहचानना",
-          "ट्रेड के सत्यापित तथ्य जाँचना",
-          "संतुलित जवाब तैयार करना",
-        ]
-      : [
-          "Understand the student's goal",
-          "Identify the family's concern",
-          "Check verified trade evidence",
-          "Shape a balanced response",
-        ];
 
   useEffect(() => {
     if (!isGenerating) return;
@@ -121,7 +200,7 @@ export function AiArbiterCard({
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-70" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-600" />
               </span>
-              {lang === "hi" ? "जवाब तैयार हो रहा है" : "Building a balanced response"}
+              {statusText.generating}
             </span>
           )}
         </div>
@@ -146,12 +225,10 @@ export function AiArbiterCard({
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-bold text-navy">
-                  {lang === "hi" ? "जवाब देने से पहले" : "Before responding"}
+                  {statusText.beforeResponse}
                 </div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
-                  {lang === "hi"
-                    ? "दोनों पक्षों और ट्रेड के तथ्यों को साथ देख रहा है"
-                    : "Weighing both perspectives against the trade facts"}
+                  {statusText.weighing}
                 </div>
               </div>
               <motion.span
@@ -206,10 +283,10 @@ export function AiArbiterCard({
             initial={{ opacity: 0, filter: "blur(9px)", y: 5 }}
             animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mt-4 overflow-hidden rounded-lg"
+            className="relative mt-4 overflow-hidden rounded-xl border border-indigo-100/80 bg-gradient-to-br from-indigo-50/40 via-white to-amber-50/30 p-4 sm:p-5"
           >
-            <p lang={lang} className="text-lg text-navy">
-              {text[lang]}
+            <p lang={activeLang} className="text-base sm:text-lg font-medium leading-relaxed text-navy break-words">
+              {arbiterText}
             </p>
             <motion.span
               aria-hidden="true"
@@ -222,8 +299,8 @@ export function AiArbiterCard({
         )}
       </AnimatePresence>
 
-      <p lang={lang} className="mt-2 border-l-2 border-success pl-3 text-sm text-muted-foreground">
-        {trade.parent_reassurance_script[lang] || c.arbiterReassurance}
+      <p lang={activeLang} className="mt-3 border-l-2 border-success pl-3 text-xs sm:text-sm leading-relaxed text-muted-foreground break-words">
+        {reassuranceText}
       </p>
       <div className="mt-5 grid grid-cols-2 gap-3">
         <Metric
@@ -253,9 +330,7 @@ export function AiArbiterCard({
       >
         <Volume2 className="h-5 w-5 text-primary" />{" "}
         {isSpeaking && currentSpeakingPersona === "arbiter"
-          ? lang === "hi"
-            ? "आर्बिटर बोल रहा है · रोकें"
-            : "Arbiter Speaking · stop"
+          ? statusText.speakingStop
           : `🔊 ${c.audioBtn}`}{" "}
         {isSpeaking && currentSpeakingPersona === "arbiter" && <Equalizer />}
       </button>
@@ -284,7 +359,7 @@ export function AiArbiterCard({
           className="flex items-center gap-2 rounded-xl border-2 border-primary/30 bg-accent/50 px-4 py-2 font-medium text-navy transition hover:border-primary hover:bg-accent disabled:opacity-50"
         >
           <Users className="h-5 w-5" />{" "}
-          {lang === "hi" ? "जिला काउंसलर से बात करें" : "Escalate to District Counsellor"}
+          {statusText.escalate}
         </button>
         <Link
           to="/mobility"
@@ -316,13 +391,13 @@ export function AiArbiterCard({
       <FacilityVerificationModal
         isOpen={isFacilityModalOpen}
         onClose={() => setIsFacilityModalOpen(false)}
-        lang={lang}
+        lang={activeLang}
         tradeId={tradeId}
       />
       <CenterLocatorModal
         isOpen={isLocatorOpen}
         onClose={() => setIsLocatorOpen(false)}
-        lang={lang}
+        lang={activeLang}
       />
     </article>
   );

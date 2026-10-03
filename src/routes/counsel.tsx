@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Activity, ChevronDown, MapPin, Scale, X } from "lucide-react";
 import { useApp } from "@/lib/app-context";
-import { MOCK_TRADES } from "@/data/mockTrades";
+import { MOCK_TRADES, getLocalizedTradeName } from "@/data/mockTrades";
 import { SCRIPTS, type Bi, type ChatItem, type Topic } from "@/data/dialogueScripts";
 import { DyadicChatFeed } from "@/components/counsel/DyadicChatFeed";
 import { SimulationBottomBar } from "@/components/counsel/SimulationBottomBar";
@@ -12,6 +12,7 @@ import { CounselorTriageModal } from "@/components/counsel/CounselorTriageModal"
 import { ConsensusMathInspector } from "@/components/counsel/ConsensusMathInspector";
 import { CenterLocatorModal } from "@/components/counsel/CenterLocatorModal";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useLanguageVoice, type SupportedLanguage } from "@/context/LanguageVoiceContext";
 
 export const Route = createFileRoute("/counsel")({
   head: () => ({ meta: [{ title: "Dyadic Dialogue | MitraSkill Family Counselling" }] }),
@@ -40,6 +41,50 @@ const opening = (tradeId: string): DialogueEvent[] => {
   ];
 };
 
+const DETAILS_HIDE_LABEL: Record<SupportedLanguage, string> = {
+  en: "Hide details",
+  hi: "विवरण छिपाएँ",
+  mr: "तपशील लपवा",
+  bn: "বিবরণ লুকান",
+  ta: "விவரங்களை மறை",
+};
+
+const DETAILS_SHOW_LABEL: Record<SupportedLanguage, string> = {
+  en: "Trade & session details",
+  hi: "ट्रेड और सत्र विवरण",
+  mr: "कौशल्य व सत्र तपशील",
+  bn: "কোর্স ও সেশনের বিবরণ",
+  ta: "தொழில் மற்றும் அமர்வு விவரங்கள்",
+};
+
+const DEADLOCK_NOTICE: Record<SupportedLanguage, { title: string; desc: string; btn: string }> = {
+  en: {
+    title: "Family divergence persists",
+    desc: "Would you like to connect with a verified district ITI counsellor?",
+    btn: "Review demo referral",
+  },
+  hi: {
+    title: "परिवार की असहमति बनी हुई है",
+    desc: "क्या आप ज़िला ITI के प्रमाणित काउंसलर से बात करना चाहेंगे?",
+    btn: "डेमो रेफ़रल देखें",
+  },
+  mr: {
+    title: "कौटुंबिक मतभेद कायम आहे",
+    desc: "तुम्ही जिल्हा आयटीआय समुपदेशकांशी संपर्क साधू इच्छिता का?",
+    btn: "समुपदेशन संदर्भ पहा",
+  },
+  bn: {
+    title: "পারিবারিক মতপার্থক্য বজায় রয়েছে",
+    desc: "আপনি কি জেলা আইটিআই কাউন্সেলরের সাথে পরামর্শ করতে চান?",
+    btn: "রেফারেল বিবরণ দেখুন",
+  },
+  ta: {
+    title: "குடும்ப கருத்து வேறுபாடு தொடர்கிறது",
+    desc: "மாவட்ட ஐடிஐ சான்றளிக்கப்பட்ட ஆலோசகருடன் பேச விரும்புகிறீர்களா?",
+    btn: "ஆலோசனை பரிந்துரையை காண்க",
+  },
+};
+
 function Counsel() {
   const {
     lang,
@@ -50,6 +95,7 @@ function Counsel() {
     setActiveTradeName,
     setCurrentDivergence,
   } = useApp();
+  const { language } = useLanguageVoice();
   const { t: ui } = useTranslation();
   const c = ui.counsel;
   const [tradeId, setTradeId] = useState(selectedTradeId);
@@ -68,8 +114,8 @@ function Counsel() {
   const endRef = useRef<HTMLDivElement>(null);
   const runId = useRef(0);
   const initialTradeId = useRef(tradeId);
-  const langRef = useRef(lang);
-  langRef.current = lang;
+  const langRef = useRef<SupportedLanguage>(language);
+  langRef.current = language;
 
   useEffect(() => {
     setMobilityExplored(window.sessionStorage.getItem("mitraskill_mobility_explored") === "true");
@@ -89,7 +135,8 @@ function Counsel() {
       if (thisRun !== runId.current) return;
       const id = messageId();
       const thinkingMs = event.kind === "arbiter" ? 3150 + Math.random() * 450 : 180;
-      const characterCount = Array.from(event.text[langRef.current]).length;
+      const eventText = event.text[langRef.current] || event.text.hi || event.text.en || "";
+      const characterCount = Array.from(eventText).length;
       const messageWaitMs =
         event.kind === "arbiter" ? 0 : Math.min(3400, Math.max(1000, characterCount * 27));
       setActivity({ ...event, id, thinkingMs });
@@ -153,24 +200,37 @@ function Counsel() {
   const selectedTrade = MOCK_TRADES.find((trade) => trade.trade_id === tradeId)!;
 
   return (
-    <div className="pb-32 sm:pb-28">
-      <section className="border-b bg-card/95">
-        <div className="mx-auto max-w-5xl px-4 py-2">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-sm font-bold leading-tight text-navy">
-                {c.stepBadge}
+    <div className="pb-32 sm:pb-28 pt-4 sm:pt-6">
+      <section className="border-b bg-card/95 backdrop-blur-xs">
+        <div className="mx-auto max-w-5xl px-4 py-2.5">
+          <div className="flex flex-col gap-2">
+            {/* Top row: Step Badge, Current Trade, and Seats Available */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-md bg-navy/10 px-2.5 py-1 text-xs font-extrabold tracking-tight text-navy">
+                  {c.stepBadge}
+                </span>
+                <span className="text-xs font-bold text-slate-700">
+                  • {getLocalizedTradeName(selectedTrade, language)}
+                </span>
               </div>
-              <div className="truncate text-xs text-muted-foreground">
-                {lang === "hi" ? selectedTrade.hindi_title : selectedTrade.trade_name}
-              </div>
+              <button
+                type="button"
+                onClick={() => setLocatorOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/30 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-950 transition hover:bg-emerald-100 active:scale-95 dark:border-emerald-300/30 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
+              >
+                <MapPin className="h-3.5 w-3.5" />
+                <span>{c.seatsBtn}</span>
+              </button>
             </div>
-            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+
+            {/* Bottom row: Divergence metric pill + Details drawer toggle */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-1.5">
               <button
                 type="button"
                 onClick={() => setInspectorOpen(true)}
                 aria-label={c.mathBtn}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-950 transition hover:bg-amber-500/20"
+                className="group inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-950 transition hover:bg-amber-500/20 active:scale-95"
               >
                 <Activity className="h-3.5 w-3.5 text-amber-700 group-hover:animate-pulse" />
                 <span>{c.divergenceBadge}: {currentDivergence.toFixed(2)}</span>
@@ -182,50 +242,46 @@ function Counsel() {
                 type="button"
                 onClick={() => setDetailsOpen((open) => !open)}
                 aria-expanded={detailsOpen}
-                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold text-navy transition hover:bg-muted"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-background px-3 py-1 text-xs font-semibold text-navy transition hover:bg-muted active:scale-95"
               >
-                {detailsOpen
-                  ? lang === "hi"
-                    ? "विवरण छिपाएँ"
-                    : "Hide details"
-                  : lang === "hi"
-                    ? "ट्रेड और सत्र विवरण"
-                    : "Trade & session details"}
+                <span>{detailsOpen ? DETAILS_HIDE_LABEL[language] || "Hide details" : DETAILS_SHOW_LABEL[language] || "Trade & session details"}</span>
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform ${detailsOpen ? "rotate-180" : ""}`}
+                  className={`h-3.5 w-3.5 transition-transform duration-200 ${detailsOpen ? "rotate-180" : ""}`}
                 />
-              </button>
-              <button
-                type="button"
-                onClick={() => setLocatorOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/30 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-950 transition hover:bg-emerald-100 dark:border-emerald-300/30 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
-              >
-                <MapPin className="h-3.5 w-3.5" />
-                {c.seatsBtn}
               </button>
             </div>
           </div>
+
+          {/* Details / Trade selection drawer */}
           {detailsOpen && (
-            <div className="mt-2 flex flex-wrap items-center gap-2 border-t pt-2">
-              {MOCK_TRADES.map((trade) => (
-                <button
-                  key={trade.trade_id}
-                  onClick={() => switchTrade(trade.trade_id)}
-                  aria-pressed={tradeId === trade.trade_id}
-                  disabled={busy}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${tradeId === trade.trade_id ? "border-navy bg-navy text-white" : "bg-background text-navy hover:border-primary"}`}
-                >
-                  {lang === "hi" ? trade.hindi_title : trade.trade_name}
-                </button>
-              ))}
-              <div className="ml-auto flex flex-wrap gap-2">
-                <span className="flex items-center gap-1 rounded-full border border-success px-3 py-1.5 text-xs font-medium text-success">
-                  <MapPin className="h-4 w-4" /> {c.districtTag}
+            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2.5 border-t border-slate-100 pt-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                {MOCK_TRADES.map((trade) => {
+                  const localizedName = getLocalizedTradeName(trade, language);
+                  return (
+                    <button
+                      key={trade.trade_id}
+                      onClick={() => switchTrade(trade.trade_id)}
+                      aria-pressed={tradeId === trade.trade_id}
+                      disabled={busy}
+                      className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition disabled:opacity-50 active:scale-95 ${
+                        tradeId === trade.trade_id
+                          ? "border-navy bg-navy text-white shadow-xs"
+                          : "border-slate-200 bg-background text-navy hover:border-primary hover:bg-slate-50"
+                      }`}
+                    >
+                      {localizedName}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="flex items-center gap-1 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-medium text-success">
+                  <MapPin className="h-3.5 w-3.5" /> {c.districtTag}
                 </span>
-                <span className="flex items-center gap-1 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-navy">
-                  <Scale className="h-4 w-4 text-primary" />
-                  {c.divergenceBadge}:{" "}
-                  {converged ? "0.18" : "0.42"}
+                <span className="flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-navy">
+                  <Scale className="h-3.5 w-3.5 text-primary" />
+                  {c.divergenceBadge}: {converged ? "0.18" : "0.42"}
                 </span>
               </div>
             </div>
@@ -234,7 +290,7 @@ function Counsel() {
       </section>
       <DyadicChatFeed
         items={items}
-        lang={lang}
+        lang={language}
         activity={activity}
         endRef={endRef}
         onRoi={() => setModal("roi")}
@@ -259,19 +315,17 @@ function Counsel() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-navy">
-                {lang === "hi" ? "परिवार की असहमति बनी हुई है" : "Family divergence persists"}
+                {DEADLOCK_NOTICE[language]?.title || DEADLOCK_NOTICE.hi.title}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                {lang === "hi"
-                  ? "क्या आप मेरठ ITI के काउंसलर से बात करना चाहेंगे?"
-                  : "Would you like to connect with a Meerut ITI counsellor?"}
+                {DEADLOCK_NOTICE[language]?.desc || DEADLOCK_NOTICE.hi.desc}
               </p>
               <button
                 type="button"
                 onClick={() => setCounselorOpen(true)}
                 className="mt-3 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition hover:brightness-105"
               >
-                {lang === "hi" ? "डेमो रेफ़रल देखें" : "Review demo referral"}
+                {DEADLOCK_NOTICE[language]?.btn || DEADLOCK_NOTICE.hi.btn}
               </button>
             </div>
             <button
@@ -289,7 +343,7 @@ function Counsel() {
         isOpen={counselorOpen}
         onClose={() => setCounselorOpen(false)}
         lang={lang}
-        selectedTradeName={selectedTrade.trade_name}
+        selectedTradeName={getLocalizedTradeName(selectedTrade, language)}
         currentDivergence={converged ? 0.18 : 0.42}
       />
       <ConsensusMathInspector

@@ -19,7 +19,7 @@ import type { Lang } from "@/lib/app-context";
 import { useLanguageVoice, type SupportedLanguage } from "@/context/LanguageVoiceContext";
 
 type Tab = "overview" | "safety" | "labs" | "employers";
-type Props = { isOpen: boolean; onClose: () => void; lang?: Lang; tradeId?: string };
+type Props = { isOpen: boolean; onClose: () => void; lang?: SupportedLanguage | Lang; tradeId?: string };
 
 const FACILITY_CONTENT: Record<SupportedLanguage, {
   title: string;
