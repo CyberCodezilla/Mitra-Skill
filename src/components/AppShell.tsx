@@ -1,7 +1,24 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { BookOpen, MessageCircle, Moon, Phone, Shield, Sun, X } from "lucide-react";
-import { useApp } from "@/lib/app-context";
+import {
+  BookOpen,
+  Check,
+  ChevronDown,
+  Globe,
+  Languages,
+  Moon,
+  Phone,
+  Shield,
+  Sun,
+  X,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useApp, type Lang } from "@/lib/app-context";
 import { useTour } from "@/context/TourContext";
 import { PlatformTour } from "@/components/common/PlatformTour";
 import { CounselorTriageModal } from "@/components/counsel/CounselorTriageModal";
@@ -24,6 +41,84 @@ function Crest() {
         })}
       </svg>
     </div>
+  );
+}
+
+function LanguageDropdown({
+  voiceLang,
+  setLanguage,
+  setLang,
+}: {
+  voiceLang: SupportedLanguage;
+  setLanguage: (lang: SupportedLanguage) => void;
+  setLang: (lang: Lang) => void;
+}) {
+  const currentLang = LANGUAGE_LABELS[voiceLang] || LANGUAGE_LABELS.en;
+  const SUPPORTED_LANGS: SupportedLanguage[] = ["hi", "en", "mr", "bn", "ta"];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-navy/20 dark:border-slate-700 bg-background/90 hover:bg-accent/80 hover:border-primary/50 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-navy dark:text-slate-100 transition-all shadow-2xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30"
+          aria-label="Select language"
+        >
+          <Globe className="h-3.5 w-3.5 text-primary shrink-0 transition-transform group-hover:rotate-12" />
+          <span className="tracking-tight whitespace-nowrap">{currentLang.native}</span>
+          <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180 shrink-0" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        sideOffset={6}
+        className="w-52 rounded-2xl border border-slate-200 dark:border-slate-800 bg-card/95 backdrop-blur-md p-1.5 shadow-xl z-50 animate-in fade-in-0 zoom-in-95"
+      >
+        <div className="px-2.5 py-1.5 border-b border-border/50 mb-1">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+            <Languages className="h-3 w-3 text-primary" />
+            <span>Select Language • भाषा</span>
+          </div>
+        </div>
+        <div className="space-y-0.5">
+          {SUPPORTED_LANGS.map((code) => {
+            const isSelected = voiceLang === code;
+            const langInfo = LANGUAGE_LABELS[code];
+            return (
+              <DropdownMenuItem
+                key={code}
+                onClick={() => {
+                  setLanguage(code);
+                  if (code === "en" || code === "hi") {
+                    setLang(code);
+                  }
+                }}
+                className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold cursor-pointer transition-colors ${
+                  isSelected
+                    ? "bg-primary/10 text-primary font-bold dark:bg-primary/20"
+                    : "text-foreground hover:bg-accent hover:text-accent-foreground"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono">
+                    {code}
+                  </span>
+                  <div>
+                    <div className="font-bold text-xs sm:text-sm leading-tight">{langInfo.native}</div>
+                    <div className="text-[10px] text-muted-foreground">{langInfo.english}</div>
+                  </div>
+                </div>
+                {isSelected && (
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-white shadow-2xs">
+                    <Check className="h-2.5 w-2.5 stroke-[3]" />
+                  </span>
+                )}
+              </DropdownMenuItem>
+            );
+          })}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -63,109 +158,144 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.localStorage.setItem("mitraskill_theme", enabled ? "dark" : "light");
   };
 
+  const STEP_ROUTES = ["/", "/counsel", "/mobility", "/accord"];
+  const STEP_LABELS: Record<SupportedLanguage, string[]> = {
+    en: ["1. Onboarding", "2. Dyadic Dialogue", "3. Degree Mobility", "4. Family Accord"],
+    hi: ["1. शुरुआत", "2. संवाद", "3. डिग्री अवसर", "4. पारिवारिक सहमति"],
+    mr: ["1. सुरुवात", "2. संवाद", "3. पदवी संधी", "4. कौटुंबिक सहमती"],
+    bn: ["1. शुरू", "2. সংলাপ", "3. ডিগ্রি সুযোগ", "4. পারিবারিক চুক্তি"],
+    ta: ["1. தொடக்கம்", "2. உரையாடல்", "3. பட்டப்படிப்பு", "4. குடும்ப உடன்படிக்கை"],
+  };
+  const stepList = STEP_LABELS[voiceLang] || STEP_LABELS[lang as SupportedLanguage] || STEP_LABELS.en;
+
   return (
     <div lang={lang} className="min-h-screen">
-      <header className="fixed inset-x-0 top-0 z-40 border-b bg-card/95 backdrop-blur">
+      <header className="fixed inset-x-0 top-0 z-40 border-b bg-card/95 backdrop-blur shadow-2xs">
         <div className="tiranga-rule" />
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <Link to="/" className="flex items-center gap-3">
+        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between gap-2 xl:gap-3 px-3 sm:px-4 py-2">
+          {/* Left: Brand Logo & Title */}
+          <Link to="/" className="flex shrink-0 items-center gap-2 sm:gap-2.5">
             <Crest />
             <div>
-              <div className="font-display text-xl font-bold text-navy">MitraSkill</div>
-              <div className="text-xs leading-tight text-muted-foreground">{n.brandSubtitle}</div>
+              <div className="font-display text-base sm:text-lg lg:text-xl font-bold text-navy tracking-tight leading-tight">
+                MitraSkill
+              </div>
+              <div className="hidden 2xl:block text-[11px] leading-tight text-muted-foreground max-w-[260px] truncate">
+                {n.brandSubtitle}
+              </div>
             </div>
           </Link>
-          <div className="flex items-center gap-2">
+
+          {/* Center: Sleek Workflow Stepper (Session Stage Navigation) - shown on 2xl */}
+          <nav
+            aria-label="Session stage"
+            className="hidden 2xl:flex items-center gap-1 rounded-full border border-slate-200/90 bg-slate-50/90 dark:border-slate-800 dark:bg-slate-900/60 p-1 text-xs shadow-2xs"
+          >
+            {stepList.map((s, i) => {
+              const isCurrent = i === active;
+              const isDone = i < active && active !== -1;
+              const targetPath = STEP_ROUTES[i] || "/";
+              return (
+                <div key={s} className="flex items-center gap-1">
+                  <Link
+                    to={targetPath}
+                    className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold transition-all ${
+                      isCurrent
+                        ? "bg-primary text-primary-foreground shadow-xs font-bold scale-[1.02]"
+                        : isDone
+                          ? "bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 font-medium"
+                          : "text-muted-foreground hover:text-foreground hover:bg-white/60 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${
+                        isCurrent
+                          ? "bg-white text-primary"
+                          : isDone
+                            ? "bg-emerald-600 text-white"
+                            : "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300"
+                      }`}
+                    >
+                      {isDone ? "✓" : i + 1}
+                    </span>
+                    <span className="whitespace-nowrap">{s.replace(/^\d+\.\s*/, "")}</span>
+                  </Link>
+                  {i < stepList.length - 1 && (
+                    <span
+                      className="text-slate-300 dark:text-slate-600 text-[11px] px-0.5 select-none"
+                      aria-hidden="true"
+                    >
+                      →
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+
+          {/* Compact Stage Breadcrumb (md to 2xl) */}
+          <div className="hidden md:flex 2xl:hidden items-center gap-1.5 rounded-full border border-slate-200/90 bg-slate-50/90 dark:border-slate-800 dark:bg-slate-900/60 px-3 py-1 text-xs font-bold text-navy shadow-2xs shrink-0">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-white text-[10px] font-black">
+              {active >= 0 ? active + 1 : "•"}
+            </span>
+            <span className="text-primary truncate max-w-[130px] lg:max-w-[180px]">
+              {active >= 0 ? stepList[active]?.replace(/^\d+\.\s*/, "") : "Admin"}
+            </span>
+            <span className="text-slate-400 text-[10px]">({active + 1}/4)</span>
+          </div>
+
+          {/* Right: Actions & Tools */}
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <Link
               to="/whatsapp"
-              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/25 bg-emerald-50 px-2.5 py-2 text-xs font-semibold text-emerald-900 transition hover:border-emerald-700 hover:bg-emerald-100 dark:border-emerald-300/25 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-900/60 sm:px-3"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-700/25 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-900 transition hover:border-emerald-700 hover:bg-emerald-100 dark:border-emerald-300/25 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-900/60 sm:px-3"
             >
               <span>📱</span>
-              <span className="hidden sm:inline">{n.whatsappDemo}</span>
+              <span className="hidden lg:inline">{n.whatsappDemo}</span>
             </Link>
             <Link
               to={path.startsWith("/admin") ? "/accord" : "/admin"}
               data-tour="tour-admin-link"
-              className="inline-flex items-center gap-1.5 rounded-full border border-navy/20 px-2.5 py-2 text-xs font-semibold text-navy transition hover:border-primary sm:px-3"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-navy/20 px-2.5 py-1.5 text-xs font-semibold text-navy transition hover:border-primary sm:px-3"
             >
-              <Shield className="h-4 w-4" />
-              {path.startsWith("/admin") ? n.familyFlow : n.adminConsole}
+              <Shield className="h-4 w-4 shrink-0" />
+              <span className="hidden lg:inline">{path.startsWith("/admin") ? n.familyFlow : n.adminConsole}</span>
             </Link>
             <button
               onClick={startTour}
-              className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-accent/60 px-2.5 py-2 text-xs font-semibold text-navy transition hover:bg-accent sm:px-3"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/30 bg-accent/60 px-2.5 py-1.5 text-xs font-semibold text-navy transition hover:bg-accent sm:px-3"
               aria-label={n.appGuide}
             >
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden md:inline">{n.appGuide}</span>
+              <BookOpen className="h-4 w-4 shrink-0" />
+              <span className="hidden xl:inline">{n.appGuide}</span>
             </button>
             <button
               onClick={toggleTheme}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border bg-card text-navy transition hover:border-primary"
+              className="inline-flex shrink-0 h-8 w-8 items-center justify-center rounded-full border bg-card text-navy transition hover:border-primary cursor-pointer"
               aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
               title={darkMode ? "Light mode" : "Dark mode"}
             >
               {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-            <div
-              className="flex items-center rounded-full border bg-muted p-0.5 text-xs font-semibold overflow-x-auto max-w-[280px] sm:max-w-none"
-              role="group"
-              aria-label="Language Selector"
-            >
-              {(["hi", "en", "mr", "bn", "ta"] as const).map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  onClick={() => {
-                    setLanguage(l);
-                    if (l === "en" || l === "hi") {
-                      setLang(l);
-                    }
-                  }}
-                  aria-pressed={voiceLang === l}
-                  className={`rounded-full px-2.5 py-1 text-xs transition cursor-pointer font-bold ${
-                    voiceLang === l
-                      ? "bg-navy text-navy-foreground shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                  title={LANGUAGE_LABELS[l].english}
-                >
-                  {LANGUAGE_LABELS[l].native}
-                </button>
-              ))}
-            </div>
+
+            {/* Language Selector Dropdown */}
+            <LanguageDropdown voiceLang={voiceLang} setLanguage={setLanguage} setLang={setLang} />
+
+            {/* Live ITI Counselor Button */}
             <button
               onClick={() => setOpen(true)}
-              className="glow-pill flex items-center gap-2 rounded-full bg-success px-4 py-2 text-sm font-semibold text-primary-foreground"
+              className="shrink-0 whitespace-nowrap glow-pill inline-flex items-center gap-1.5 rounded-full bg-success hover:bg-emerald-600 px-3 sm:px-3.5 py-1.5 text-xs sm:text-sm font-bold text-white shadow-xs transition active:scale-95 cursor-pointer"
+              title={n.liveCounselor}
+              aria-label={n.liveCounselor}
             >
-              <Phone className="h-4 w-4" />
-              <span className="hidden sm:inline">{n.liveCounselor}</span>
+              <Phone className="h-3.5 w-3.5 shrink-0" />
+              <span className="whitespace-nowrap">{n.liveCounselor}</span>
             </button>
           </div>
         </div>
-        <nav aria-label="Session stage" className="border-t bg-background/80">
-          <ol className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 py-2 text-sm">
-            {t.steps[lang].map((s, i) => (
-              <li key={s} className="flex shrink-0 items-center gap-1">
-                <span
-                  className={`rounded-full px-3 py-1 font-medium ${
-                    i === active
-                      ? "bg-primary text-primary-foreground"
-                      : i < active
-                        ? "bg-accent text-navy"
-                        : "text-muted-foreground"
-                  }`}
-                >
-                  {i + 1}. {s}
-                </span>
-                {i < 3 && <span className="text-muted-foreground">→</span>}
-              </li>
-            ))}
-          </ol>
-        </nav>
       </header>
 
-      <main className="pt-36 sm:pt-32">{children}</main>
+      <main className="pt-20 sm:pt-20">{children}</main>
 
       {legacyPopupEnabled && open && (
         <div

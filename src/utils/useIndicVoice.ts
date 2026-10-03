@@ -84,6 +84,7 @@ export function useIndicVoice() {
     targetGender: "male" | "female";
     pitch: number;
     rate: number;
+    rateMultiplier?: number;
   } | null>(null);
 
   const isSupported = typeof window !== "undefined" && "speechSynthesis" in window;

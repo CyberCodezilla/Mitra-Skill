@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Activity, ChevronDown, MapPin, Scale, X } from "lucide-react";
+import { Activity as ActivityIcon, ChevronDown, MapPin, Scale, X } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { MOCK_TRADES, getLocalizedTradeName } from "@/data/mockTrades";
-import { SCRIPTS, type Bi, type ChatItem, type Topic } from "@/data/dialogueScripts";
-import { DyadicChatFeed } from "@/components/counsel/DyadicChatFeed";
+import {
+  SCRIPTS,
+  type Bi,
+  type ChatItem,
+  type Topic,
+  type BalancedDyadicTurn,
+} from "@/data/dialogueScripts";
+import { DyadicChatFeed, type Activity } from "@/components/counsel/DyadicChatFeed";
 import { SimulationBottomBar } from "@/components/counsel/SimulationBottomBar";
 import { ParentRoiModal } from "@/components/counsel/ParentRoiModal";
 import { AlumniReelsDrawer } from "@/components/counsel/AlumniReelsDrawer";
@@ -20,14 +26,29 @@ export const Route = createFileRoute("/counsel")({
   component: Counsel,
 });
 
-type Activity =
-  | { id: string; kind: "student" | "parent"; text: Bi; thinkingMs: number; topic?: Topic | undefined }
-  | { id: string; kind: "arbiter"; tradeId: string; text: Bi; thinkingMs: number; topic?: ArbiterTopic | undefined }
-  | null;
 type DialogueEvent =
-  | { kind: "student"; text: Bi; topic?: Topic | undefined }
-  | { kind: "parent"; text: Bi; topic?: Topic | undefined }
-  | { kind: "arbiter"; tradeId: string; text: Bi; topic?: ArbiterTopic | undefined };
+  | {
+      kind: "student";
+      text: Bi;
+      topic?: Topic | undefined;
+      thinkingMs?: number;
+      balancedScenario?: BalancedDyadicTurn | undefined;
+    }
+  | {
+      kind: "parent";
+      text: Bi;
+      topic?: Topic | undefined;
+      thinkingMs?: number;
+      balancedScenario?: BalancedDyadicTurn | undefined;
+    }
+  | {
+      kind: "arbiter";
+      tradeId: string;
+      text: Bi;
+      topic?: ArbiterTopic | undefined;
+      thinkingMs?: number;
+      balancedScenario?: BalancedDyadicTurn | undefined;
+    };
 
 let messageSequence = 0;
 const messageId = () => `counsel-${++messageSequence}`;
@@ -135,21 +156,38 @@ function Counsel() {
     for (const event of events) {
       if (thisRun !== runId.current) return;
       const id = messageId();
-      const thinkingMs = event.kind === "arbiter" ? 3150 + Math.random() * 450 : 180;
+      // Brief 800ms typing indicator for Arbiter evaluates constraints
+      const thinkingMs =
+        event.kind === "arbiter"
+          ? (event.thinkingMs ?? 800)
+          : (event.thinkingMs ?? 180);
       const eventText = event.text[langRef.current] || event.text.hi || event.text.en || "";
       const characterCount = Array.from(eventText).length;
       const messageWaitMs =
-        event.kind === "arbiter" ? 0 : Math.min(3400, Math.max(1000, characterCount * 27));
+        event.kind === "arbiter" ? 0 : Math.min(1800, Math.max(600, characterCount * 18));
       setActivity({ ...event, id, thinkingMs });
       await delay(thinkingMs + messageWaitMs);
       if (thisRun !== runId.current) return;
       const item: ChatItem =
         event.kind === "arbiter"
-          ? { id, kind: "arbiter", tradeId: event.tradeId, text: event.text, topic: event.topic }
-          : { id, kind: event.kind, text: event.text, topic: event.topic };
+          ? {
+              id,
+              kind: "arbiter",
+              tradeId: event.tradeId,
+              text: event.text,
+              topic: event.topic,
+              balancedScenario: event.balancedScenario,
+            }
+          : {
+              id,
+              kind: event.kind,
+              text: event.text,
+              topic: event.topic,
+              balancedScenario: event.balancedScenario,
+            };
       setItems((current) => [...current, item]);
       setActivity(null);
-      await delay(620 + Math.random() * 360);
+      await delay(450);
     }
     if (thisRun === runId.current) {
       setActivity(null);
@@ -200,10 +238,65 @@ function Counsel() {
     void animateEvents(events);
   };
 
+  const handleSelectBalancedScenario = useCallback(
+    async (scenario: BalancedDyadicTurn) => {
+      if (busy) return;
+      setConverged(true);
+      if (scenario.initiator === "parent") {
+        setObjectionClicks((count) => count + 1);
+      } else {
+        setObjectionClicks(0);
+      }
+
+      const userTextBi: Bi = {
+        en: scenario.userMessage.text_en,
+        hi: scenario.userMessage.text_hi,
+        mr: scenario.userMessage.text_mr || scenario.userMessage.text_hi,
+        bn: scenario.userMessage.text_bn || scenario.userMessage.text_hi,
+        ta: scenario.userMessage.text_ta || scenario.userMessage.text_hi,
+      };
+
+      const arbiterTextBi: Bi = {
+        en: scenario.arbiterResponse.fullText_en,
+        hi: scenario.arbiterResponse.fullText_hi,
+        mr: scenario.arbiterResponse.fullText_mr || scenario.arbiterResponse.fullText_hi,
+        bn: scenario.arbiterResponse.fullText_bn || scenario.arbiterResponse.fullText_hi,
+        ta: scenario.arbiterResponse.fullText_ta || scenario.arbiterResponse.fullText_hi,
+      };
+
+      const arbiterTopic: ArbiterTopic =
+        scenario.category === "PARENT_WAGE" || scenario.category === "STUDENT_UNREALISTIC_EXPECTATION"
+          ? "salary"
+          : scenario.category === "PARENT_STIGMA"
+          ? "stigma"
+          : "safety";
+
+      const events: DialogueEvent[] = [
+        {
+          kind: scenario.initiator === "student" ? "student" : "parent",
+          text: userTextBi,
+          balancedScenario: scenario,
+          topic: scenario.category === "PARENT_STIGMA" ? "stigma" : "salary",
+        },
+        {
+          kind: "arbiter",
+          tradeId,
+          text: arbiterTextBi,
+          thinkingMs: 800,
+          balancedScenario: scenario,
+          topic: arbiterTopic,
+        },
+      ];
+
+      await animateEvents(events);
+    },
+    [busy, tradeId, animateEvents]
+  );
+
   const selectedTrade = MOCK_TRADES.find((trade) => trade.trade_id === tradeId)!;
 
   return (
-    <div className="pb-32 sm:pb-28 pt-4 sm:pt-6">
+    <div className="pb-48 sm:pb-44 pt-1 sm:pt-2">
       <section className="border-b bg-card/95 backdrop-blur-xs">
         <div className="mx-auto max-w-5xl px-4 py-2.5">
           <div className="flex flex-col gap-2">
@@ -235,7 +328,7 @@ function Counsel() {
                 aria-label={c.mathBtn}
                 className="group inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-950 transition hover:bg-amber-500/20 active:scale-95"
               >
-                <Activity className="h-3.5 w-3.5 text-amber-700 group-hover:animate-pulse" />
+                <ActivityIcon className="h-3.5 w-3.5 text-amber-700 group-hover:animate-pulse" />
                 <span>{c.divergenceBadge}: {currentDivergence.toFixed(2)}</span>
                 <span className="hidden sm:inline">
                   · {c.mathBtn}
@@ -306,6 +399,7 @@ function Counsel() {
         onSimulate={simulate}
         onObjectionClick={() => setObjectionClicks((count) => count + 1)}
         onRegularResponse={() => setObjectionClicks(0)}
+        onSelectScenario={handleSelectBalancedScenario}
       />
       {objectionClicks >= 3 && !mobilityExplored && !deadlockDismissed && (
         <aside

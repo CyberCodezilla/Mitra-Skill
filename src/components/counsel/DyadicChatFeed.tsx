@@ -1,14 +1,14 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { GraduationCap, Users } from "lucide-react";
-import type { Bi, ChatItem, Topic } from "@/data/dialogueScripts";
+import type { Bi, ChatItem, Topic, BalancedDyadicTurn } from "@/data/dialogueScripts";
 import type { Lang } from "@/lib/app-context";
 import { useLanguageVoice, type SupportedLanguage } from "@/context/LanguageVoiceContext";
 import type { ArbiterTopic } from "@/data/arbiterEvidence";
 import { AiArbiterCard } from "./AiArbiterCard";
 
-type Activity =
-  | { id: string; kind: "student" | "parent"; tradeId?: never; text: Bi; thinkingMs: number; topic?: Topic | undefined }
-  | { id: string; kind: "arbiter"; tradeId: string; text: Bi; thinkingMs: number; topic?: ArbiterTopic | undefined }
+export type Activity =
+  | { id: string; kind: "student" | "parent"; tradeId?: never; text: Bi; thinkingMs: number; topic?: Topic | undefined; balancedScenario?: BalancedDyadicTurn | undefined }
+  | { id: string; kind: "arbiter"; tradeId: string; text: Bi; thinkingMs: number; topic?: ArbiterTopic | undefined; balancedScenario?: BalancedDyadicTurn | undefined }
   | null;
 
 type Props = {
@@ -73,13 +73,19 @@ export function DyadicChatFeed({
                   tradeId={message.tradeId}
                   text={message.text}
                   topic={message.topic}
+                  balancedScenario={message.balancedScenario}
                   lang={activeLang}
                   onRoi={onRoi}
                   onAlumni={onAlumni}
                   onEscalate={onEscalate}
                 />
               ) : (
-                <ChatBubble kind={message.kind} text={messageText} lang={activeLang} />
+                <ChatBubble
+                  kind={message.kind}
+                  text={messageText}
+                  lang={activeLang}
+                  balancedScenario={message.balancedScenario}
+                />
               )}
             </motion.div>
           );
@@ -97,6 +103,7 @@ export function DyadicChatFeed({
                 tradeId={activity.tradeId}
                 text={activity.text}
                 topic={activity.topic}
+                balancedScenario={activity.balancedScenario}
                 isGenerating
                 lang={activeLang}
                 onRoi={onRoi}
@@ -109,6 +116,7 @@ export function DyadicChatFeed({
                 text={activity.text[activeLang] || activity.text.hi || activity.text.en || ""}
                 lang={activeLang}
                 isSending
+                balancedScenario={activity.balancedScenario}
               />
             )}
           </motion.div>
@@ -124,16 +132,22 @@ function ChatBubble({
   text,
   lang,
   isSending = false,
+  balancedScenario,
 }: {
   kind: "student" | "parent";
   text: string;
   lang: SupportedLanguage;
   isSending?: boolean;
+  balancedScenario?: BalancedDyadicTurn | undefined;
 }) {
   const student = kind === "student";
   const speaker = SPEAKER_NAMES[lang] || SPEAKER_NAMES.hi;
   const typing = TYPING_INDICATORS[lang] || TYPING_INDICATORS.hi;
-  const name = student ? speaker.student : speaker.parent;
+  const name = balancedScenario?.userMessage?.speakerName
+    ? balancedScenario.userMessage.speakerName
+    : student
+      ? speaker.student
+      : speaker.parent;
   const typingText = student ? typing.student : typing.parent;
 
   return (
