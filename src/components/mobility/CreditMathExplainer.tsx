@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Calculator, ShieldCheck } from "lucide-react";
 import type { Lang } from "@/lib/app-context";
 import type { TradeRecord } from "@/data/mockTrades";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function CreditMathExplainer({
   trade,
@@ -14,6 +15,8 @@ export function CreditMathExplainer({
   playing: boolean;
   onPlay: () => void;
 }) {
+  const { t: ui } = useTranslation();
+  const m = ui.mobility;
   const hi = lang === "hi";
   const hours = trade.duration_months * 100;
   const credits = trade.ncrf_mobility.credits_earned;
@@ -22,34 +25,28 @@ export function CreditMathExplainer({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-navy">
-            {hi ? "क्रेडिट का हिसाब" : "How credit hours add up"}
+            {m.creditMathTitle}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {hi
-              ? "सीखने का समय क्रेडिट में बदलता है।"
-              : "Learning time is counted as transferable credit."}
+            {m.creditMathDesc}
           </p>
         </div>
         <button
           onClick={onPlay}
           aria-pressed={playing}
-          className="flex items-center gap-2 rounded-full border border-success px-3 py-2 text-sm font-semibold text-success"
+          className="flex items-center gap-2 rounded-full border border-success px-3 py-2 text-sm font-semibold text-success cursor-pointer"
         >
           🔊{" "}
           {playing
             ? hi
               ? "ऑडियो चल रहा है"
-              : "Playing Hindi audio"
-            : hi
-              ? "NCrF नियम सुनें"
-              : "Listen to NCrF Rules in Hindi"}
+              : "Playing audio"
+            : m.listenBtn}
           {playing && <Wave />}
         </button>
       </div>
       <div className="mt-5 flex flex-wrap items-center justify-center gap-2 rounded-xl bg-accent p-3 text-center font-bold text-navy sm:text-lg">
-        <span>30 {hi ? "सीखने के घंटे" : "Notional Learning Hours"}</span>
-        <span className="text-primary">=</span>
-        <span>1 {hi ? "अकादमिक क्रेडिट" : "Academic Credit"}</span>
+        <span>{m.creditMathFormula}</span>
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <MathTile

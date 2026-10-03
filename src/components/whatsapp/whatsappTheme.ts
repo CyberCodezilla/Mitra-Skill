@@ -1,9 +1,10 @@
 export interface WAThemeTokens {
+  mode: "light" | "dark";
   appBarBg: string;
   appBarText: string;
   appBarSubtext: string;
   chatBg: string;
-  doodleOpacity: number;
+  doodlePattern: string;
   userBubbleBg: string;
   userBubbleText: string;
   botBubbleBg: string;
@@ -15,19 +16,23 @@ export interface WAThemeTokens {
   inputBarBg: string;
   inputFieldBg: string;
   inputFieldText: string;
+  inputPlaceholder: string;
+  inputIconColor: string;
   quickChipBg: string;
   quickChipBorder: string;
   quickChipText: string;
   cardBorder: string;
   cardDivider: string;
+  cardBtnText: string;
 }
 
 export const WA_LIGHT_THEME: WAThemeTokens = {
+  mode: "light",
   appBarBg: "#008069",
   appBarText: "#FFFFFF",
   appBarSubtext: "#D1EBE5",
   chatBg: "#EFEAE2",
-  doodleOpacity: 0.08,
+  doodlePattern: "radial-gradient(#C4B5A5 0.75px, transparent 0.75px)",
   userBubbleBg: "#D9FDD3",
   userBubbleText: "#111B21",
   botBubbleBg: "#FFFFFF",
@@ -39,19 +44,23 @@ export const WA_LIGHT_THEME: WAThemeTokens = {
   inputBarBg: "#F0F2F5",
   inputFieldBg: "#FFFFFF",
   inputFieldText: "#111B21",
+  inputPlaceholder: "#8696A0",
+  inputIconColor: "#54656F",
   quickChipBg: "#FFFFFF",
-  quickChipBorder: "#E2E8F0",
-  quickChipText: "#075E54",
-  cardBorder: "#E2E8F0",
-  cardDivider: "#F1F5F9",
+  quickChipBorder: "#D1D7DB",
+  quickChipText: "#008069",
+  cardBorder: "#E9EDEF",
+  cardDivider: "#F0F2F5",
+  cardBtnText: "#00A884",
 };
 
 export const WA_DARK_THEME: WAThemeTokens = {
+  mode: "dark",
   appBarBg: "#1F2C34",
   appBarText: "#E9EDEF",
   appBarSubtext: "#8696A0",
   chatBg: "#0B141A",
-  doodleOpacity: 0.05,
+  doodlePattern: "radial-gradient(#1F2C34 0.75px, transparent 0.75px)",
   userBubbleBg: "#005C4B",
   userBubbleText: "#E9EDEF",
   botBubbleBg: "#202C33",
@@ -63,11 +72,14 @@ export const WA_DARK_THEME: WAThemeTokens = {
   inputBarBg: "#1F2C34",
   inputFieldBg: "#2A3942",
   inputFieldText: "#E9EDEF",
+  inputPlaceholder: "#8696A0",
+  inputIconColor: "#8696A0",
   quickChipBg: "#202C33",
   quickChipBorder: "#2A3942",
   quickChipText: "#25D366",
   cardBorder: "#2A3942",
   cardDivider: "#2A3942",
+  cardBtnText: "#25D366",
 };
 
 /**

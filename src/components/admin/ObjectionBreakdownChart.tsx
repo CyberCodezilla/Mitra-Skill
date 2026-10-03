@@ -1,5 +1,6 @@
 import { AlertTriangle } from "lucide-react";
 import type { Lang } from "@/lib/app-context";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const data = [
   {
@@ -41,12 +42,14 @@ const data = [
 ];
 
 export function ObjectionBreakdownChart({ lang }: { lang: Lang }) {
+  const { t: ui } = useTranslation();
+  const adm = ui.admin;
   const hi = lang === "hi";
   return (
     <section className="rounded-2xl border bg-white p-5 shadow-card">
       <h2 className="flex items-center gap-2 text-lg font-bold text-navy">
         <AlertTriangle className="h-5 w-5 text-primary" />
-        {hi ? "अभिभावक चिंताओं का वर्गीकरण" : "Objection taxonomy breakdown"}
+        {adm.breakdownTitle}
       </h2>
       <div className="mt-5 space-y-4">
         {data.map((item) => (

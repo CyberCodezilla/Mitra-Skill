@@ -1,8 +1,11 @@
 import { CheckCircle2, QrCode, ShieldCheck } from "lucide-react";
 import type { Lang } from "@/lib/app-context";
 import type { TradeRecord } from "@/data/mockTrades";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function CertificateCard({ trade, lang }: { trade: TradeRecord; lang: Lang }) {
+  const { t } = useTranslation();
+  const a = t.accord;
   const hi = lang === "hi";
   const candidate = "Aman Sharma";
   const guardian = "Ramesh Sharma";
@@ -43,7 +46,7 @@ export function CertificateCard({ trade, lang }: { trade: TradeRecord; lang: Lan
         aria-hidden
       >
         <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-amber-500/70 bg-amber-100/60 text-center text-[9px] font-black uppercase tracking-wider text-amber-800 shadow-[0_0_0_5px_rgba(217,119,6,0.12)]">
-          Verified
+          {a.verifiedSeal.split("•")[0]?.trim() || "Verified"}
           <br />
           Family
           <br />
@@ -57,72 +60,62 @@ export function CertificateCard({ trade, lang }: { trade: TradeRecord; lang: Lan
             <Crest />
           </div>
           <div className="mt-3 text-xs font-bold tracking-[.18em] text-amber-700">
-            MINISTRY OF SKILL DEVELOPMENT & ENTREPRENEURSHIP
+            {a.subTitle.split("|")[0]?.trim() || "MINISTRY OF SKILL DEVELOPMENT & ENTREPRENEURSHIP"}
           </div>
           <h1 className="mt-2 text-2xl font-bold uppercase tracking-wide text-navy sm:text-3xl">
-            Parivaar Rozgar Patra
+            {a.officialTitle}
           </h1>
-          <p lang="hi" className="text-lg font-semibold text-navy">
-            परिवार रोज़गार पत्र
-          </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Ministry of Skill Development & Entrepreneurship (MSDE) | Skill India Mission
+            {a.subTitle}
           </p>
-          <div className="mx-auto mt-4 inline-block rounded-full border border-amber-600/30 bg-amber-50 px-4 py-1.5 font-mono text-xs font-bold text-amber-800">
-            MSDE-NDS-2026-MEERUT-8842
+          <div className="mx-auto mt-4 inline-flex items-center gap-1.5 rounded-full border border-amber-600/30 bg-amber-50 px-4 py-1.5 font-mono text-xs font-bold text-amber-800">
+            <span className="opacity-70">{a.docIdLabel}</span>
+            <span>MSDE-NDS-2026-MEERUT-8842</span>
           </div>
         </header>
-        <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-slate-600">
-          {hi
-            ? "यह पारिवारिक संकल्प पत्र कौशल प्रशिक्षण के चयन और आगे की शैक्षणिक यात्रा को दर्ज करता है।"
-            : "This family milestone records a shared choice of technical training and a pathway for continued learning."}
-        </p>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <Info
-            label={hi ? "उम्मीदवार" : "Candidate"}
-            value={`${candidate} · Age 17`}
-            sub={hi ? "कक्षा 10 उत्तीर्ण" : "10th Pass"}
-          />
-          <Info
-            label={hi ? "अभिभावक" : "Parent / Guardian"}
-            value={guardian}
-            sub={hi ? "पिता" : "Father"}
-          />
-          <Info
-            label={hi ? "चयनित व्यवसाय" : "Selected vocation"}
-            value={trade.trade_name}
-            sub={`NSQF Level ${trade.nsqf_level}`}
-          />
-          <Info
-            label={hi ? "प्रशिक्षण केंद्र" : "Training center"}
-            value="Government ITI Saket"
-            sub="Meerut Node, Uttar Pradesh"
-          />
+        <div className="mt-6">
+          <div className="mb-2 text-xs font-bold uppercase tracking-wider text-amber-900/70">
+            {a.partiesTitle}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Info
+              label={a.candidateLabel}
+              value={`${candidate} · Age 17`}
+              sub={hi ? "कक्षा 10 उत्तीर्ण" : "10th Pass"}
+            />
+            <Info
+              label={a.parentLabel}
+              value={guardian}
+              sub={hi ? "पिता" : "Father"}
+            />
+            <Info
+              label={a.tradeLabel}
+              value={trade.trade_name}
+              sub={`NSQF Level ${trade.nsqf_level}`}
+            />
+            <Info
+              label={a.centerLabel}
+              value="Government ITI Saket"
+              sub="Meerut Node, Uttar Pradesh"
+            />
+          </div>
         </div>
         <section className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 p-4 sm:p-5">
           <h2 className="font-bold text-navy">
-            {hi ? "हमारी साझा प्रतिबद्धताएँ" : "Shared family commitments"}
+            {a.termsTitle}
           </h2>
           <ul className="mt-3 space-y-3 text-sm text-slate-700">
             <Term>
-              {hi
-                ? `${trade.duration_months} महीने के प्रशिक्षण में नियमित भागीदारी और 85% या अधिक उपस्थिति का लक्ष्य।`
-                : `Student commitment: complete ${trade.duration_months} months of training with a target of 85%+ attendance.`}
+              {a.term1}
             </Term>
             <Term>
-              {hi
-                ? "अभिभावक सामान्य BA पाठ्यक्रम के बजाय तकनीकी कौशल प्रशिक्षण का समर्थन करेंगे।"
-                : "Parent agreement: support technical skilling alongside the family's education and career planning."}
+              {a.term2}
             </Term>
             <Term>
-              {hi
-                ? `${trade.ncrf_mobility.credits_earned} NCrF क्रेडिट अर्जित; डिप्लोमा में क्रेडिट/प्रवेश संबंधित संस्था के नियमों के अनुसार।`
-                : `${trade.ncrf_mobility.credits_earned} NCrF credits shown in the pathway; diploma credit and entry decisions follow the admitting institution's rules.`}
+              {a.term3}
             </Term>
             <Term>
-              {hi
-                ? `सत्यापित शुरुआती वेतन सीमा ${monthly}/माह (${trade.verified_metrics.audit_source})।`
-                : `Audited starting pay benchmark: ${monthly}/month (${trade.verified_metrics.audit_source}).`}
+              {a.term4}
             </Term>
           </ul>
         </section>
@@ -155,9 +148,7 @@ export function CertificateCard({ trade, lang }: { trade: TradeRecord; lang: Lan
         </div>
         <footer className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
           <ShieldCheck className="h-4 w-4 text-success" />
-          {hi
-            ? "प्रोटोटाइप पारिवारिक सहमति प्रमाणपत्र · आधिकारिक सरकारी दस्तावेज़ नहीं"
-            : "Prototype family agreement certificate · not an official government document"}
+          <span>{a.verifiedSeal}</span>
         </footer>
       </div>
     </article>

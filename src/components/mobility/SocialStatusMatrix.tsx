@@ -1,8 +1,11 @@
 import { Scale, ShieldCheck } from "lucide-react";
 import type { Lang } from "@/lib/app-context";
 import type { TradeRecord } from "@/data/mockTrades";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function SocialStatusMatrix({ lang, trade }: { lang: Lang; trade: TradeRecord }) {
+  const { t: ui } = useTranslation();
+  const m = ui.mobility;
   const hi = lang === "hi";
   const pay = `₹${trade.verified_metrics.salary_range_min.toLocaleString("en-IN")}`;
   const rows: [string, string][] = hi
@@ -38,7 +41,7 @@ export function SocialStatusMatrix({ lang, trade }: { lang: Lang; trade: TradeRe
     <section className="rounded-2xl border bg-white p-5 shadow-card sm:p-6">
       <h2 className="flex items-center gap-2 text-xl font-bold text-navy">
         <Scale className="h-5 w-5 text-primary" />
-        {hi ? "धारणा बनाम वास्तविकता" : "Roadside Perception vs. NCrF Pathway"}
+        {m.matrixTitle}
       </h2>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         {rows.map(([perception, reality]) => (

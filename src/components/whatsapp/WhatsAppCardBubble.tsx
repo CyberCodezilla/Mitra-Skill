@@ -1,199 +1,102 @@
-import { useState } from "react";
-import { BadgeCheck, Download, ExternalLink, PhoneCall, ShieldCheck } from "lucide-react";
-import type { WACardAction, WAMessage } from "@/data/mockWhatsAppFlow";
+import React from "react";
+import { CheckCircle2, TrendingUp, Building2, ExternalLink } from "lucide-react";
 import type { WAThemeTokens } from "./whatsappTheme";
 
 interface WhatsAppCardBubbleProps {
-  message: WAMessage;
+  cardData: {
+    tradeTitle: string;
+    metrics: { label: string; value: string; icon: string }[];
+    auditTag: string;
+    actionButtons: string[];
+  };
+  timestamp: string;
   theme: WAThemeTokens;
-  isDark: boolean;
-  onActionTrigger?: (notice: string) => void;
+  onActionClick: (action: string) => void;
 }
 
-export function WhatsAppCardBubble({
-  message,
+const renderMetricIcon = (iconName: string) => {
+  if (iconName === "CheckCircle2") return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />;
+  if (iconName === "TrendingUp") return <TrendingUp className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />;
+  if (iconName === "Building2") return <Building2 className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />;
+  return <span className="text-emerald-500 font-bold mt-0.5 shrink-0">•</span>;
+};
+
+export const WhatsAppCardBubble: React.FC<WhatsAppCardBubbleProps> = ({
+  cardData,
+  timestamp,
   theme,
-  isDark: _isDark,
-  onActionTrigger,
-}: WhatsAppCardBubbleProps) {
-  const card = message.cardData;
-  const [clickedActionId, setClickedActionId] = useState<string | null>(null);
-
-  if (!card) return null;
-
-  const handleActionClick = (action: WACardAction) => {
-    setClickedActionId(action.id);
-    setTimeout(() => setClickedActionId(null), 1500);
-
-    if (action.type === "call") {
-      onActionTrigger?.(`📞 नोडल अधिकारी संपर्क: ${action.payload}`);
-    } else if (action.type === "download") {
-      onActionTrigger?.("📜 परिवार सहमति पत्र (PDF) डाउनलोड शुरू हुआ! (Demo File Generated)");
-      // Simulate downloading or copying link
-      if (typeof navigator !== "undefined" && navigator.clipboard) {
-        navigator.clipboard.writeText(action.payload).catch(() => {});
-      }
-    } else {
-      onActionTrigger?.(`🔗 खोला गया: ${action.payload}`);
-    }
-  };
-
+  onActionClick,
+}) => {
   return (
-    <div
-      className="relative max-w-[94%] select-none self-start rounded-2xl rounded-tl-none shadow-sm transition-colors duration-150 overflow-hidden"
-      style={{
-        backgroundColor: theme.botBubbleBg,
-        color: theme.botBubbleText,
-        border: `1px solid ${theme.cardBorder}`,
-      }}
-    >
-      {/* Authentic Corner Triangle Tail anchored top-left */}
-      <svg
-        viewBox="0 0 8 13"
-        height="13"
-        width="8"
-        className="pointer-events-none absolute -left-2 top-0"
-        style={{ color: theme.botBubbleBg }}
-      >
-        <path
-          d="M2.812 1H8v11.193L1.533 3.568C.474 2.156 1.042 1 2.812 1z"
-          fill="currentColor"
-        />
-      </svg>
-
-      {/* Card Header with Verified Badge & Verification Pill */}
+    <div className="flex w-full my-1.5 justify-start select-none">
       <div
-        className="flex items-center justify-between gap-2 px-3 py-2 border-b"
+        className="relative max-w-[88%] sm:max-w-[330px] rounded-2xl shadow-sm overflow-hidden text-xs transition-colors duration-150"
         style={{
-          borderColor: theme.cardDivider,
-          backgroundColor: _isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 128, 105, 0.04)",
+          backgroundColor: theme.botBubbleBg,
+          color: theme.botBubbleText,
+          border: `1px solid ${theme.cardBorder}`,
         }}
       >
-        <div className="flex items-center gap-1.5 min-w-0">
-          <BadgeCheck className="h-4 w-4 shrink-0 text-[#00A884]" />
-          <span className="text-[11px] font-bold tracking-tight text-[#00A884] truncate">
-            {card.subtitle ?? "MSDE • DGT Verified Trade Guide"}
+        {/* Native Bubble Corner Tail */}
+        <div
+          className="absolute top-0 w-3 h-3 pointer-events-none"
+          style={{
+            left: "-6px",
+            clipPath: "polygon(100% 0, 100% 100%, 0 0)",
+            backgroundColor: theme.botBubbleBg,
+          }}
+        />
+
+        {/* Header Ribbon */}
+        <div className="p-3 border-b" style={{ borderColor: theme.cardDivider }}>
+          <span className="text-[10px] font-bold uppercase tracking-wider block opacity-75">
+            MitraSkill Verified Advisory
           </span>
+          <h4 className="font-bold text-sm mt-0.5 leading-snug">{cardData.tradeTitle}</h4>
         </div>
-        {card.badge && (
-          <span
-            className="shrink-0 rounded-full px-2 py-0.5 text-[8.5px] font-bold shadow-2xs"
-            style={{
-              backgroundColor: _isDark ? "rgba(0, 168, 132, 0.2)" : "#E1F2EC",
-              color: "#00A884",
-            }}
-          >
-            {card.badge}
-          </span>
-        )}
-      </div>
 
-      {/* Card Body */}
-      <div className="p-3">
-        {/* Trade Title */}
-        <h4 className="text-[13px] font-bold leading-snug tracking-tight text-inherit">
-          {card.title}
-        </h4>
+        {/* Metrics List */}
+        <div className="p-3 space-y-2">
+          {cardData.metrics.map((m, idx) => (
+            <div key={idx} className="flex items-start gap-2 text-xs">
+              {renderMetricIcon(m.icon)}
+              <div>
+                <span className="opacity-75 block text-[10px]">{m.label}</span>
+                <span className="font-bold text-[11.5px] leading-tight">{m.value}</span>
+              </div>
+            </div>
+          ))}
+          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold pt-1">
+            {cardData.auditTag}
+          </p>
+        </div>
 
-        {/* Bulleted Key Metrics */}
-        <div className="mt-2.5 space-y-2 text-[11px] leading-relaxed">
-          {card.metrics.map((metric, idx) => (
-            <div
-              key={idx}
-              className="flex items-start gap-2 rounded-lg p-1.5 transition-colors"
+        {/* Interactive Action Buttons */}
+        <div className="border-t" style={{ borderColor: theme.cardDivider }}>
+          {cardData.actionButtons.map((btn, bIdx) => (
+            <button
+              key={bIdx}
+              type="button"
+              onClick={() => onActionClick(btn)}
+              className="w-full py-2.5 px-3 text-center text-xs font-bold transition-colors border-b last:border-b-0 hover:bg-black/5 active:bg-black/10 flex items-center justify-center gap-1.5 cursor-pointer"
               style={{
-                backgroundColor: _isDark ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.02)",
+                color: theme.cardBtnText,
+                borderColor: theme.cardDivider,
               }}
             >
-              <div className="min-w-0 flex-1 font-medium">{metric}</div>
-            </div>
+              <span>{btn}</span>
+              <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+            </button>
           ))}
         </div>
 
-        {/* Footer Note */}
-        {card.footer && (
-          <div
-            className="mt-2 flex items-center gap-1 text-[9.5px] italic leading-tight"
-            style={{ color: theme.timestampText }}
-          >
-            <ShieldCheck className="h-3 w-3 shrink-0 text-[#00A884]" />
-            <span className="truncate">{card.footer}</span>
-          </div>
-        )}
-
-        {/* Message Timestamp */}
         <div
-          className="mt-1 flex justify-end text-[9px] font-medium"
+          className="px-3 pb-1 text-right text-[9px] font-mono opacity-60"
           style={{ color: theme.timestampText }}
         >
-          {message.timestamp}
+          {timestamp}
         </div>
-      </div>
-
-      {/* Card Divider */}
-      <div className="h-[1px] w-full" style={{ backgroundColor: theme.cardDivider }} />
-
-      {/* Quick-Action Buttons (Native WhatsApp Cloud API Template Style) */}
-      <div className="flex flex-col divide-y" style={{ borderColor: theme.cardDivider }}>
-        {card.actions && card.actions.length > 0 ? (
-          card.actions.map((action) => {
-            const isClicked = clickedActionId === action.id;
-            return (
-              <button
-                key={action.id}
-                type="button"
-                onClick={() => handleActionClick(action)}
-                className="group flex w-full cursor-pointer items-center justify-center gap-2 py-2.5 px-3 text-[12px] font-semibold transition active:bg-black/10 hover:bg-black/5"
-                style={{
-                  color: isClicked ? "#25D366" : "#00A884",
-                }}
-              >
-                {action.type === "call" ? (
-                  <PhoneCall className="h-3.5 w-3.5 transition group-hover:scale-110" />
-                ) : action.type === "download" ? (
-                  <Download className="h-3.5 w-3.5 transition group-hover:scale-110" />
-                ) : (
-                  <ExternalLink className="h-3.5 w-3.5 transition group-hover:scale-110" />
-                )}
-                <span>{isClicked ? "चयनित (Selected) ✓" : action.label}</span>
-              </button>
-            );
-          })
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={() =>
-                handleActionClick({
-                  id: "default_call",
-                  label: "📞 नोडल अधिकारी से बात करें",
-                  type: "call",
-                  payload: "+91 98765 43210 (मेरठ ITI)",
-                })
-              }
-              className="flex w-full cursor-pointer items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold text-[#00A884] transition active:bg-black/10 hover:bg-black/5"
-            >
-              <PhoneCall className="h-3.5 w-3.5" />
-              <span>📞 नोडल अधिकारी से बात करें</span>
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                handleActionClick({
-                  id: "default_download",
-                  label: "📜 परिवार सहमति पत्र डाउनलोड",
-                  type: "download",
-                  payload: "https://mitraskill.msde.gov.in/docs/family-consent-form-hi.pdf",
-                })
-              }
-              className="flex w-full cursor-pointer items-center justify-center gap-1.5 py-2.5 text-[12px] font-semibold text-[#00A884] transition active:bg-black/10 hover:bg-black/5"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>📜 परिवार सहमति पत्र डाउनलोड</span>
-            </button>
-          </>
-        )}
       </div>
     </div>
   );
-}
+};

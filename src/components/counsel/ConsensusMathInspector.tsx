@@ -15,11 +15,12 @@ import {
   type TradeCompetencyProfile,
 } from "@/utils/arbitrationEngine";
 import type { AptitudeVector, Lang } from "@/lib/app-context";
+import { useLanguageVoice, type SupportedLanguage } from "@/context/LanguageVoiceContext";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  lang: Lang;
+  lang?: Lang;
   tradeId?: string;
   onDivergenceChange?: (value: number) => void;
   studentAptitude?: AptitudeVector;
@@ -55,14 +56,176 @@ const DEFAULTS = {
 };
 const inr = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
+interface MathLabels {
+  title: string;
+  subtitle: string;
+  conflict: string;
+  aligned: string;
+  conflictNote: string;
+  alignedNote: string;
+  wage: string;
+  distance: string;
+  weights: string;
+  student: string;
+  parent: string;
+  geo: string;
+  threshold: string;
+  safety: string;
+  reset: string;
+  close: string;
+  breakdown: string;
+  similarity: string;
+  feasibility: string;
+  accessibility: string;
+  utility: string;
+  divergence: string;
+  disclaimer: string;
+}
+
+const MATH_LABELS: Record<SupportedLanguage, MathLabels> = {
+  en: {
+    title: "Consensus Math Inspector",
+    subtitle: "Live simulation · not a decision system",
+    conflict: "Conflict threshold crossed in simulation",
+    aligned: "Within conflict threshold in simulation",
+    conflictNote:
+      "Model Δ is above the selected τ. This demo raises an arbitration flag; people make real decisions.",
+    alignedNote:
+      "Model Δ is at or below the selected τ. This is not evidence of actual family agreement.",
+    wage: "Parent reservation wage",
+    distance: "Distance to center",
+    weights: "Objective weights",
+    student: "Student aptitude (w₁)",
+    parent: "Parent feasibility (w₂)",
+    geo: "Geographic access (w₃)",
+    threshold: "Conflict threshold τ",
+    safety: "Apply minimum female-safety score (8.5/10)",
+    reset: "Reset defaults",
+    close: "Close inspector",
+    breakdown: "Live calculation",
+    similarity: "Aptitude similarity · Sim",
+    feasibility: "Parent feasibility · Feas",
+    accessibility: "Geographic access · Loc",
+    utility: "Composite utility · U(T)",
+    divergence: "Dyadic divergence · Δ",
+    disclaimer:
+      "Demo model: wage, aptitude, safety, and distance inputs are illustrative. Weights affect U(T); this model defines Δ = |Sim − Feas|.",
+  },
+  hi: {
+    title: "परिवार सहमति गणित निरीक्षक",
+    subtitle: "लाइव सिमुलेशन · निर्णय सहायता नहीं",
+    conflict: "सिमुलेशन में संघर्ष सीमा पार",
+    aligned: "सिमुलेशन में संघर्ष सीमा के भीतर",
+    conflictNote:
+      "मॉडल का Δ चुनी गई τ से अधिक है। यह डेमो arbitration flag सक्रिय करता है; वास्तविक निर्णय व्यक्ति करें।",
+    alignedNote: "मॉडल का Δ चुनी गई τ से अधिक नहीं है। इसे परिवार की वास्तविक सहमति न मानें।",
+    wage: "अभिभावक की न्यूनतम अपेक्षित आय",
+    distance: "केंद्र तक दूरी",
+    weights: "उद्देश्य भार",
+    student: "छात्र योग्यता (w₁)",
+    parent: "अभिभावक व्यवहार्यता (w₂)",
+    geo: "भौगोलिक पहुँच (w₃)",
+    threshold: "संघर्ष सीमा τ",
+    safety: "महिला सुरक्षा स्कोर की न्यूनतम शर्त लागू करें (8.5/10)",
+    reset: "डिफ़ॉल्ट रीसेट",
+    close: "निरीक्षक बंद करें",
+    breakdown: "लाइव गणना",
+    similarity: "योग्यता समानता · Sim",
+    feasibility: "अभिभावक व्यवहार्यता · Feas",
+    accessibility: "भौगोलिक पहुँच · Loc",
+    utility: "संयुक्त उपयोगिता · U(T)",
+    divergence: "द्विपक्षीय विचलन · Δ",
+    disclaimer:
+      "डेमो मॉडल: वेतन, क्षमता, सुरक्षा और दूरी के इनपुट उदाहरण मात्र हैं। भार केवल U(T) में लगते हैं; इस मॉडल में Δ = |Sim − Feas| है।",
+  },
+  mr: {
+    title: "कौटुंबिक सहमती गणित निरीक्षक",
+    subtitle: "थेट सिमुलेशन · निर्णय प्रणाली नाही",
+    conflict: "सिमुलेशनमध्ये मतभेद मर्यादा ओलांडली",
+    aligned: "सिमुलेशनमध्ये मतभेद मर्यादेत",
+    conflictNote: "मॉडेलचा Δ निवडलेल्या τ पेक्षा जास्त आहे. हा डेमो मध्यस्थी ध्वज सक्रिय करतो.",
+    alignedNote: "मॉडेलचा Δ निवडलेल्या τ पेक्षा जास्त नाही. कौटुंबिक सहमतीचा पुरावा नाही.",
+    wage: "पालकांची किमान अपेक्षित कमाई",
+    distance: "केंद्राचे अंतर",
+    weights: "उद्देश भार",
+    student: "विद्यार्थी पात्रता (w₁)",
+    parent: "पालक व्यवहार्यता (w₂)",
+    geo: "भौगोलिक पोहोच (w₃)",
+    threshold: "मतभेद मर्यादा τ",
+    safety: "महिला सुरक्षा किमान अट लागू करा (8.5/10)",
+    reset: "रीसेट करा",
+    close: "निरीक्षक बंद करा",
+    breakdown: "थेट हिशोब",
+    similarity: "पात्रता समानता · Sim",
+    feasibility: "पालक व्यवहार्यता · Feas",
+    accessibility: "भौगोलिक पोहोच · Loc",
+    utility: "संयुक्त उपयोगिता · U(T)",
+    divergence: "द्विपक्षीय मतभेद · Δ",
+    disclaimer: "डेमो मॉडेल: पगार, क्षमता, सुरक्षा आणि अंतराची माहिती उदाहरणादाखल आहे. Δ = |Sim − Feas|.",
+  },
+  bn: {
+    title: "পারিবারিক ঐক্যমত গাণিতিক পরিদর্শক",
+    subtitle: "লাইভ সিমুলেশন · সিদ্ধান্ত সহায়তা নয়",
+    conflict: "সিমুলেশনে মতপার্থক্য সীমা অতিক্রম করেছে",
+    aligned: "সিমুলেশনে মতপার্থক্য সীমার মধ্যে",
+    conflictNote: "মডেলের Δ নির্বাচিত τ এর চেয়ে বেশি। এটি মধ্যস্থতা ফ্ল্যাগ সক্রিয় করে।",
+    alignedNote: "মডেলের Δ নির্বাচিত τ এর মধ্যে রয়েছে। এটি পরিবারের সম্পূর্ণ ঐকমত্য নয়।",
+    wage: "অভিভাবকের ন্যূনতম প্রত্যাশিত আয়",
+    distance: "কেন্দ্রের দূরত্ব",
+    weights: "উদ্দেশ্যমূলক গুরুত্ব",
+    student: "ছাত্র যোগ্যতা (w₁)",
+    parent: "অভিভাবক সম্ভাব্যতা (w₂)",
+    geo: "ভৌগোলিক সান্নিধ্য (w₃)",
+    threshold: "দ্বন্দ্ব সীমা τ",
+    safety: "ছাত্রী নিরাপত্তার ন্যূনতম শর্ত প্রয়োগ (8.5/10)",
+    reset: "রিসেট",
+    close: "পরিদর্শক বন্ধ করুন",
+    breakdown: "লাইভ গণনা",
+    similarity: "যোগ্যতা সাদৃশ্য · Sim",
+    feasibility: "অভিভাবক সম্ভাব্যতা · Feas",
+    accessibility: "ভৌগোলिक প্রবেশাধিকার · Loc",
+    utility: "যৌথ উপযোগিতা · U(T)",
+    divergence: "দ্বিপাক্ষিক পার্থক্য · Δ",
+    disclaimer: "ডেমো মডেল: বেতন, দক্ষতা, নিরাপত্তা এবং দূরত্বের তথ্য নমুনা মাত্র। Δ = |Sim − Feas|.",
+  },
+  ta: {
+    title: "குடும்ப ஒருமித்த கருத்து கணித ஆய்வாளர்",
+    subtitle: "நேரடி மாதிரி · முடிவு முறைமை அல்ல",
+    conflict: "மாதிரியில் முரண்பாட்டு வரம்பு தாண்டியது",
+    aligned: "மாதிரியில் முரண்பாட்டு வரம்பிற்குள் உள்ளது",
+    conflictNote: "மாதிரியின் Δ தேர்ந்தெடுக்கப்பட்ட τ ஐ விட அதிகம். இது சமரச எச்சரிக்கையை எழுப்புகிறது.",
+    alignedNote: "மாதிரியின் Δ தேர்ந்தெடுக்கப்பட்ட τ வரம்பிற்குள் உள்ளது. இது முழுமையான ஒப்பந்தம் அல்ல.",
+    wage: "பெற்றோரின் குறைந்தபட்ச எதிர்பார்ப்பு ஊதியம்",
+    distance: "மையத்திற்கான தூரம்",
+    weights: "நோக்க எடைகள்",
+    student: "மாணவர் திறன் (w₁)",
+    parent: "பெற்றோர் ஏற்புத்திறன் (w₂)",
+    geo: "புவியியல் அணுகல் (w₃)",
+    threshold: "முரண்பாட்டு வரம்பு τ",
+    safety: "பெண்கள் பாதுகாப்பு குறைந்தபட்ச அளவுகோல் (8.5/10)",
+    reset: "மீட்டமை",
+    close: "ஆய்வாளரை மூடுக",
+    breakdown: "நேரடி கணக்கீடு",
+    similarity: "திறன் ஒற்றுமை · Sim",
+    feasibility: "பெற்றோர் ஏற்புத்திறன் · Feas",
+    accessibility: "புவியியல் அணுகல் · Loc",
+    utility: "கூட்டுப் பயன்பாடு · U(T)",
+    divergence: "இருவழி வேறுபாடு · Δ",
+    disclaimer: "மாதிரி கட்டமைப்பு: ஊதியம், திறன், பாதுகாப்பு மற்றும் தூர அளவீடுகள் விளக்கத்திற்கு மட்டுமே. Δ = |Sim − Feas|.",
+  },
+};
+
 export function ConsensusMathInspector({
   isOpen,
   onClose,
-  lang,
+  lang: propLang,
   tradeId = "AUTO_MECH_01",
   onDivergenceChange,
   studentAptitude,
 }: Props) {
+  const { language } = useLanguageVoice();
+  const activeLang = language || propLang || "en";
+  const hi = activeLang === "hi";
   const [reservationWage, setReservationWage] = useState(DEFAULTS.reservationWage);
   const [w1, setW1] = useState(DEFAULTS.w1);
   const [w2, setW2] = useState(DEFAULTS.w2);
@@ -70,7 +233,7 @@ export function ConsensusMathInspector({
   const [distanceKm, setDistanceKm] = useState(DEFAULTS.distanceKm);
   const [requiresSafety, setRequiresSafety] = useState(DEFAULTS.requiresSafety);
   const [threshold, setThreshold] = useState(DEFAULTS.threshold);
-  const hi = lang === "hi";
+  const labels = MATH_LABELS[activeLang] || MATH_LABELS.en;
   const baseTrade = TRADE_PROFILES[tradeId] ?? TRADE_PROFILES["AUTO_MECH_01"]!;
   const trade = useMemo(
     () => ({ ...baseTrade, center_distance_km: distanceKm }),
@@ -116,62 +279,6 @@ export function ConsensusMathInspector({
     onDivergenceChange?.(result.divergence);
     onClose();
   };
-  const labels = hi
-    ? {
-        title: "परिवार सहमति गणित निरीक्षक",
-        subtitle: "लाइव सिमुलेशन · निर्णय सहायता नहीं",
-        conflict: "सिमुलेशन में संघर्ष सीमा पार",
-        aligned: "सिमुलेशन में संघर्ष सीमा के भीतर",
-        conflictNote:
-          "मॉडल का Δ चुनी गई τ से अधिक है। यह डेमो arbitration flag सक्रिय करता है; वास्तविक निर्णय व्यक्ति करें।",
-        alignedNote: "मॉडल का Δ चुनी गई τ से अधिक नहीं है। इसे परिवार की वास्तविक सहमति न मानें।",
-        wage: "अभिभावक की न्यूनतम अपेक्षित आय",
-        distance: "केंद्र तक दूरी",
-        weights: "उद्देश्य भार",
-        student: "छात्र योग्यता (w₁)",
-        parent: "अभिभावक व्यवहार्यता (w₂)",
-        geo: "भौगोलिक पहुँच (w₃)",
-        threshold: "संघर्ष सीमा τ",
-        safety: "महिला सुरक्षा स्कोर की न्यूनतम शर्त लागू करें (8.5/10)",
-        reset: "डिफ़ॉल्ट रीसेट",
-        close: "निरीक्षक बंद करें",
-        breakdown: "लाइव गणना",
-        similarity: "योग्यता समानता · Sim",
-        feasibility: "अभिभावक व्यवहार्यता · Feas",
-        accessibility: "भौगोलिक पहुँच · Loc",
-        utility: "संयुक्त उपयोगिता · U(T)",
-        divergence: "द्विपक्षीय विचलन · Δ",
-        disclaimer:
-          "डेमो मॉडल: वेतन, क्षमता, सुरक्षा और दूरी के इनपुट उदाहरण मात्र हैं। भार केवल U(T) में लगते हैं; इस मॉडल में Δ = |Sim − Feas| है।",
-      }
-    : {
-        title: "Consensus Math Inspector",
-        subtitle: "Live simulation · not a decision system",
-        conflict: "Conflict threshold crossed in simulation",
-        aligned: "Within conflict threshold in simulation",
-        conflictNote:
-          "Model Δ is above the selected τ. This demo raises an arbitration flag; people make real decisions.",
-        alignedNote:
-          "Model Δ is at or below the selected τ. This is not evidence of actual family agreement.",
-        wage: "Parent reservation wage",
-        distance: "Distance to center",
-        weights: "Objective weights",
-        student: "Student aptitude (w₁)",
-        parent: "Parent feasibility (w₂)",
-        geo: "Geographic access (w₃)",
-        threshold: "Conflict threshold τ",
-        safety: "Apply minimum female-safety score (8.5/10)",
-        reset: "Reset defaults",
-        close: "Close inspector",
-        breakdown: "Live calculation",
-        similarity: "Aptitude similarity · Sim",
-        feasibility: "Parent feasibility · Feas",
-        accessibility: "Geographic access · Loc",
-        utility: "Composite utility · U(T)",
-        divergence: "Dyadic divergence · Δ",
-        disclaimer:
-          "Demo model: wage, aptitude, safety, and distance inputs are illustrative. Weights affect U(T); this model defines Δ = |Sim − Feas|.",
-      };
   const wText = (weight: number) => (weight / weightSum).toFixed(2);
 
   return (

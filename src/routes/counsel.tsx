@@ -11,6 +11,7 @@ import { AlumniReelsDrawer } from "@/components/counsel/AlumniReelsDrawer";
 import { CounselorTriageModal } from "@/components/counsel/CounselorTriageModal";
 import { ConsensusMathInspector } from "@/components/counsel/ConsensusMathInspector";
 import { CenterLocatorModal } from "@/components/counsel/CenterLocatorModal";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export const Route = createFileRoute("/counsel")({
   head: () => ({ meta: [{ title: "Dyadic Dialogue | MitraSkill Family Counselling" }] }),
@@ -49,6 +50,8 @@ function Counsel() {
     setActiveTradeName,
     setCurrentDivergence,
   } = useApp();
+  const { t: ui } = useTranslation();
+  const c = ui.counsel;
   const [tradeId, setTradeId] = useState(selectedTradeId);
   const [items, setItems] = useState<ChatItem[]>([]);
   const [activity, setActivity] = useState<Activity>(null);
@@ -156,7 +159,7 @@ function Counsel() {
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="text-sm font-bold leading-tight text-navy">
-                {lang === "hi" ? "पारिवारिक संवाद" : "Family dialogue"}
+                {c.stepBadge}
               </div>
               <div className="truncate text-xs text-muted-foreground">
                 {lang === "hi" ? selectedTrade.hindi_title : selectedTrade.trade_name}
@@ -166,15 +169,13 @@ function Counsel() {
               <button
                 type="button"
                 onClick={() => setInspectorOpen(true)}
-                aria-label={
-                  lang === "hi" ? "गणित निरीक्षक खोलें" : "Open divergence math inspector"
-                }
+                aria-label={c.mathBtn}
                 className="group inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-950 transition hover:bg-amber-500/20"
               >
                 <Activity className="h-3.5 w-3.5 text-amber-700 group-hover:animate-pulse" />
-                <span>Δ {currentDivergence.toFixed(2)}</span>
+                <span>{c.divergenceBadge}: {currentDivergence.toFixed(2)}</span>
                 <span className="hidden sm:inline">
-                  · {lang === "hi" ? "गणित जाँचें" : "Inspect math"}
+                  · {c.mathBtn}
                 </span>
               </button>
               <button
@@ -200,7 +201,7 @@ function Counsel() {
                 className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/30 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-950 transition hover:bg-emerald-100 dark:border-emerald-300/30 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
               >
                 <MapPin className="h-3.5 w-3.5" />
-                {lang === "hi" ? "नज़दीकी ITI सीटें" : "Nearby ITI Seats & Apprenticeships"}
+                {c.seatsBtn}
               </button>
             </div>
           </div>
@@ -219,11 +220,11 @@ function Counsel() {
               ))}
               <div className="ml-auto flex flex-wrap gap-2">
                 <span className="flex items-center gap-1 rounded-full border border-success px-3 py-1.5 text-xs font-medium text-success">
-                  <MapPin className="h-4 w-4" /> Meerut, UP
+                  <MapPin className="h-4 w-4" /> {c.districtTag}
                 </span>
                 <span className="flex items-center gap-1 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-navy">
                   <Scale className="h-4 w-4 text-primary" />
-                  {lang === "hi" ? "सत्र का डेमो माप" : "Session demo measure"}:{" "}
+                  {c.divergenceBadge}:{" "}
                   {converged ? "0.18" : "0.42"}
                 </span>
               </div>

@@ -5,6 +5,8 @@ import { useApp } from "@/lib/app-context";
 import { useTour } from "@/context/TourContext";
 import { PlatformTour } from "@/components/common/PlatformTour";
 import { CounselorTriageModal } from "@/components/counsel/CounselorTriageModal";
+import { useLanguageVoice, type SupportedLanguage, LANGUAGE_LABELS } from "@/context/LanguageVoiceContext";
+import { useTranslation } from "@/hooks/useTranslation";
 
 function Crest() {
   return (
@@ -27,6 +29,9 @@ function Crest() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { lang, setLang, t, activeTradeName, currentDivergence } = useApp();
+  const { language: voiceLang, setLanguage } = useLanguageVoice();
+  const { t: ui } = useTranslation();
+  const n = ui.nav;
   const { start: startTour } = useTour();
   const [open, setOpen] = useState(false);
   const [legacyPopupEnabled] = useState(false);
@@ -67,7 +72,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Crest />
             <div>
               <div className="font-display text-xl font-bold text-navy">MitraSkill</div>
-              <div className="text-xs leading-tight text-muted-foreground">{t.subtitle[lang]}</div>
+              <div className="text-xs leading-tight text-muted-foreground">{n.brandSubtitle}</div>
             </div>
           </Link>
           <div className="flex items-center gap-2">
@@ -75,8 +80,8 @@ export function AppShell({ children }: { children: ReactNode }) {
               to="/whatsapp"
               className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/25 bg-emerald-50 px-2.5 py-2 text-xs font-semibold text-emerald-900 transition hover:border-emerald-700 hover:bg-emerald-100 dark:border-emerald-300/25 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-900/60 sm:px-3"
             >
-              <MessageCircle className="h-4 w-4" />
-              <span className="hidden md:inline">WhatsApp Demo</span>
+              <span>📱</span>
+              <span className="hidden sm:inline">{n.whatsappDemo}</span>
             </Link>
             <Link
               to={path.startsWith("/admin") ? "/accord" : "/admin"}
@@ -84,17 +89,15 @@ export function AppShell({ children }: { children: ReactNode }) {
               className="inline-flex items-center gap-1.5 rounded-full border border-navy/20 px-2.5 py-2 text-xs font-semibold text-navy transition hover:border-primary sm:px-3"
             >
               <Shield className="h-4 w-4" />
-              {path.startsWith("/admin") ? "Family Flow" : "Admin Console"}
+              {path.startsWith("/admin") ? n.familyFlow : n.adminConsole}
             </Link>
             <button
               onClick={startTour}
               className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-accent/60 px-2.5 py-2 text-xs font-semibold text-navy transition hover:bg-accent sm:px-3"
-              aria-label={lang === "hi" ? "ऐप मार्गदर्शिका शुरू करें" : "Open app guide"}
+              aria-label={n.appGuide}
             >
               <BookOpen className="h-4 w-4" />
-              <span className="hidden md:inline">
-                {lang === "hi" ? "मार्गदर्शिका" : "App Guide"}
-              </span>
+              <span className="hidden md:inline">{n.appGuide}</span>
             </button>
             <button
               onClick={toggleTheme}
@@ -105,18 +108,29 @@ export function AppShell({ children }: { children: ReactNode }) {
               {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <div
-              className="flex rounded-full border bg-muted p-1 text-sm font-semibold"
+              className="flex items-center rounded-full border bg-muted p-0.5 text-xs font-semibold overflow-x-auto max-w-[280px] sm:max-w-none"
               role="group"
-              aria-label="Language"
+              aria-label="Language Selector"
             >
-              {(["hi", "en"] as const).map((l) => (
+              {(["hi", "en", "mr", "bn", "ta"] as const).map((l) => (
                 <button
                   key={l}
-                  onClick={() => setLang(l)}
-                  aria-pressed={lang === l}
-                  className={`rounded-full px-3 py-1 transition ${lang === l ? "bg-navy text-navy-foreground" : "text-muted-foreground"}`}
+                  type="button"
+                  onClick={() => {
+                    setLanguage(l);
+                    if (l === "en" || l === "hi") {
+                      setLang(l);
+                    }
+                  }}
+                  aria-pressed={voiceLang === l}
+                  className={`rounded-full px-2.5 py-1 text-xs transition cursor-pointer font-bold ${
+                    voiceLang === l
+                      ? "bg-navy text-navy-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  title={LANGUAGE_LABELS[l].english}
                 >
-                  {l === "hi" ? "हिंदी" : "English"}
+                  {LANGUAGE_LABELS[l].native}
                 </button>
               ))}
             </div>
@@ -125,7 +139,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className="glow-pill flex items-center gap-2 rounded-full bg-success px-4 py-2 text-sm font-semibold text-primary-foreground"
             >
               <Phone className="h-4 w-4" />
-              <span className="hidden sm:inline">{t.counsellor[lang]}</span>
+              <span className="hidden sm:inline">{n.liveCounselor}</span>
             </button>
           </div>
         </div>

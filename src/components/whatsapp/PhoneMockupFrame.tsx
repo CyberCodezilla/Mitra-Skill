@@ -5,11 +5,11 @@ import type { WAThemeTokens } from "./whatsappTheme";
 interface PhoneMockupFrameProps {
   children: ReactNode;
   theme: WAThemeTokens;
-  isDark: boolean;
+  isDark?: boolean;
 }
 
-export function PhoneMockupFrame({ children, theme, isDark: _isDark }: PhoneMockupFrameProps) {
-  const [timeString, setTimeString] = useState("9:41");
+export function PhoneMockupFrame({ children, theme }: PhoneMockupFrameProps) {
+  const [timeString, setTimeString] = useState("10:15");
 
   useEffect(() => {
     const updateTime = () => {
@@ -28,26 +28,26 @@ export function PhoneMockupFrame({ children, theme, isDark: _isDark }: PhoneMock
   }, []);
 
   return (
-    <div className="relative mx-auto flex flex-col items-center">
-      {/* Smartphone Chassis - Realistic Bezel with Titanium Edge & Gloss Ring */}
-      <div className="relative h-[790px] w-[350px] sm:w-[390px] md:w-[410px] shrink-0 rounded-[52px] border-[10px] border-slate-800 bg-slate-950 p-[5px] shadow-[0_25px_70px_-15px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.12)] ring-1 ring-black">
+    <div className="relative mx-auto flex flex-col items-center select-none">
+      {/* Smartphone Chassis - Responsive iPhone-style bezel (w-[360px] sm:w-[390px] h-[780px]) */}
+      <div className="relative h-[780px] w-[350px] sm:w-[380px] md:w-[390px] shrink-0 rounded-[50px] border-[10px] border-slate-800 bg-slate-950 p-[5px] shadow-[0_25px_70px_-15px_rgba(0,0,0,0.65),0_0_0_1px_rgba(255,255,255,0.12)] ring-1 ring-black">
         {/* Hardware side button accents (Volume & Power) */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -left-[13px] top-[115px] h-11 w-[3px] rounded-l-sm bg-slate-700 shadow-xs"
+          className="pointer-events-none absolute -left-[13px] top-[115px] h-10 w-[3px] rounded-l-sm bg-slate-700 shadow-xs"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -left-[13px] top-[175px] h-11 w-[3px] rounded-l-sm bg-slate-700 shadow-xs"
+          className="pointer-events-none absolute -left-[13px] top-[170px] h-10 w-[3px] rounded-l-sm bg-slate-700 shadow-xs"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -right-[13px] top-[140px] h-16 w-[3px] rounded-r-sm bg-slate-700 shadow-xs"
+          className="pointer-events-none absolute -right-[13px] top-[135px] h-14 w-[3px] rounded-r-sm bg-slate-700 shadow-xs"
         />
 
-        {/* Screen Bezel & Display Area */}
+        {/* Screen Display Area */}
         <div
-          className="relative flex h-full w-full flex-col overflow-hidden rounded-[40px] select-none transition-colors duration-200"
+          className="relative flex h-full w-full flex-col overflow-hidden rounded-[38px] transition-colors duration-200"
           style={{ backgroundColor: theme.chatBg }}
         >
           {/* Native Status Bar with Dynamic Island */}
@@ -63,12 +63,12 @@ export function PhoneMockupFrame({ children, theme, isDark: _isDark }: PhoneMock
               {timeString}
             </span>
 
-            {/* Dynamic Island Pill with Camera Reflection */}
+            {/* Dynamic Island Cutout */}
             <div
               aria-label="Dynamic Island"
               className="pointer-events-none absolute left-1/2 top-1.5 z-40 flex h-[22px] w-28 -translate-x-1/2 items-center justify-end rounded-full bg-black px-2 shadow-inner"
             >
-              {/* Camera Lens Reflection Dot */}
+              {/* Lens reflection */}
               <div className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-[#08121a] ring-1 ring-slate-800" />
                 <span className="h-2.5 w-2.5 rounded-full bg-[#03070b] ring-1 ring-slate-800/80 shadow-2xs">
@@ -91,10 +91,10 @@ export function PhoneMockupFrame({ children, theme, isDark: _isDark }: PhoneMock
             </div>
           </div>
 
-          {/* Phone Display Content (WhatsApp UI) */}
+          {/* WhatsApp UI Screen */}
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
 
-          {/* Bottom Home Indicator Gesture Bar */}
+          {/* Bottom White/Slate Home Gesture Bar */}
           <div
             className="flex h-6 shrink-0 items-center justify-center transition-colors duration-200"
             style={{ backgroundColor: theme.inputBarBg }}

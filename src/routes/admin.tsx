@@ -16,6 +16,7 @@ import { ResistanceHeatmap } from "@/components/admin/ResistanceHeatmap";
 import { ObjectionBreakdownChart } from "@/components/admin/ObjectionBreakdownChart";
 import { SentimentMigrationChart } from "@/components/admin/SentimentMigrationChart";
 import { DsdpReportModal } from "@/components/admin/DsdpReportModal";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "MSDE Administrator Console — MitraSkill" }] }),
@@ -43,6 +44,8 @@ const events = [
 ];
 function Admin() {
   const { lang } = useApp();
+  const { t: ui } = useTranslation();
+  const adm = ui.admin;
   const hi = lang === "hi";
   const [state, setState] = useState("Uttar Pradesh");
   const [district, setDistrict] = useState("Meerut");
@@ -95,12 +98,10 @@ function Admin() {
             <Shield className="h-4 w-4" /> MSDE · Scheme Administrator Portal
           </div>
           <h1 className="mt-3 text-3xl font-bold">
-            {hi ? "कौशल योजना प्रशासन" : "Scheme Administrator Console"}
+            {adm.title}
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-white/70">
-            {hi
-              ? "परिवारों की चिंताओं और परामर्श परिणामों की नमूना टेलीमेट्री।"
-              : "Sample telemetry showing where family resistance concentrates and what support may help."}
+            {adm.subtitle}
           </p>
         </div>
         <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-3">
@@ -135,15 +136,15 @@ function Admin() {
         />
         <button
           onClick={exportCsv}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#E87722] px-4 py-2.5 text-sm font-semibold text-white"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#E87722] px-4 py-2.5 text-sm font-semibold text-white cursor-pointer"
         >
           <Download className="h-4 w-4" />
-          {hi ? "जिला कौशल योजना CSV निर्यात करें" : "Export District Skill Plan Report (CSV)"}
+          {adm.exportBtn}
         </button>
         <button
           type="button"
           onClick={() => setDsdpOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl border border-emerald-800/30 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100 dark:border-emerald-300/30 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
+          className="inline-flex items-center gap-2 rounded-xl border border-emerald-800/30 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-100 dark:border-emerald-300/30 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer"
         >
           <FileText className="h-4 w-4" /> Export District Action Report
         </button>
@@ -151,25 +152,25 @@ function Admin() {
       <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi
           icon={<Users />}
-          label={hi ? "कुल परिवार सत्र" : "Total Dyad Sessions"}
+          label={adm.kpiSessions}
           value="4,821"
           note="+18.4% this month"
         />
         <Kpi
           icon={<Activity />}
-          label={hi ? "सहमति दर" : "Consensus Rate"}
+          label={adm.kpiConsensus}
           value="74.2%"
           note="Family Accord generated"
         />
         <Kpi
           icon={<TrendingUp />}
-          label={hi ? "भावना में बदलाव" : "Net Sentiment Shift"}
+          label={adm.kpiShift}
           value="+41.8%"
           note="Pre 68% hesitant → Post 74% reassured"
         />
         <Kpi
           icon={<AlertTriangle />}
-          label={hi ? "मुख्य क्षेत्रीय बाधा" : "Primary Regional Friction"}
+          label={adm.kpiTopFriction}
           value={hi ? "सामाजिक प्रतिष्ठा" : "Social Prestige / Marriage Market"}
           note="42% of sessions"
         />

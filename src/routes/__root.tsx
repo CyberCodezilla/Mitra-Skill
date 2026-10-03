@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { AppProvider } from "../lib/app-context";
 import { AppShell } from "../components/AppShell";
 import { TourProvider } from "../context/TourContext";
+import { LanguageVoiceProvider } from "../context/LanguageVoiceContext";
 
 function NotFoundComponent() {
   return (
@@ -143,11 +144,13 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <AppProvider>
-        <TourProvider>
-          <AppShell>
-            <Outlet />
-          </AppShell>
-        </TourProvider>
+        <LanguageVoiceProvider>
+          <TourProvider>
+            <AppShell>
+              <Outlet />
+            </AppShell>
+          </TourProvider>
+        </LanguageVoiceProvider>
       </AppProvider>
     </QueryClientProvider>
   );

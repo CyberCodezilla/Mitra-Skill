@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, MapPin } from "lucide-react";
 import type { Lang } from "@/lib/app-context";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type Block = {
   name: string;
@@ -42,6 +43,8 @@ const blocks: Block[] = [
 const levels = ["Low", "Medium", "High"];
 
 export function ResistanceHeatmap({ lang, district }: { lang: Lang; district: string }) {
+  const { t: ui } = useTranslation();
+  const adm = ui.admin;
   const hi = lang === "hi";
   const [selected, setSelected] = useState<string | null>(null);
   const scoped =
@@ -61,7 +64,7 @@ export function ResistanceHeatmap({ lang, district }: { lang: Lang; district: st
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-lg font-bold text-navy">
           <MapPin className="h-5 w-5 text-primary" />
-          {hi ? "जिला प्रतिरोध और भावना" : "District resistance & sentiment"}
+          {adm.heatmapTitle}
         </h2>
         <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-navy">
           {district} · {hi ? "नमूना टेलीमेट्री" : "Sample telemetry"}

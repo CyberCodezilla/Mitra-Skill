@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Award, ArrowUpRight, BookOpen, GraduationCap, Layers, ShieldCheck } from "lucide-react";
 import type { Lang } from "@/lib/app-context";
 import type { TradeRecord } from "@/data/mockTrades";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type Stage = {
   id: number;
@@ -128,9 +129,25 @@ export function NcrfLadderStepper({
   activeStage: number;
   onSelect: (stage: number) => void;
 }) {
+  const { t: ui } = useTranslation();
+  const m = ui.mobility;
   const stages = stagesFor(trade, lang);
   const hi = lang === "hi";
   const employerNames = [...trade.verified_metrics.top_employers.slice(0, 2), "Indian Railways*"];
+
+  const getStageTitle = (id: number) => {
+    if (id === 1) return m.stages.step1Title;
+    if (id === 2) return m.stages.step2Title;
+    if (id === 3) return m.stages.step3Title;
+    return m.stages.step4Title;
+  };
+  const getStageDesc = (id: number) => {
+    if (id === 1) return m.stages.step1Desc;
+    if (id === 2) return m.stages.step2Desc;
+    if (id === 3) return m.stages.step3Desc;
+    return m.stages.step4Desc;
+  };
+
   return (
     <section
       data-tour="tour-mobility-ladder"
@@ -176,8 +193,8 @@ export function NcrfLadderStepper({
                 {index === 0 ? (hi ? "अभी" : "Now") : `+${index * 2} years`}
               </span>
             </div>
-            <h3 className="mt-3 min-h-12 text-base font-bold text-navy">{stage.title}</h3>
-            <div className="mt-2 text-xs font-semibold text-muted-foreground">{stage.level}</div>
+            <h3 className="mt-3 min-h-12 text-base font-bold text-navy">{getStageTitle(stage.id)}</h3>
+            <div className="mt-2 text-xs font-semibold text-muted-foreground">{getStageDesc(stage.id)}</div>
             <div className="mt-2 rounded-lg bg-accent px-3 py-2 text-sm font-bold text-navy">
               {activeStage === stage.id ? <AnimatedCredits value={stage.credits} /> : stage.credits}
             </div>
@@ -207,7 +224,7 @@ export function NcrfLadderStepper({
                     <span className="text-xs font-bold uppercase tracking-wide text-primary">
                       {hi ? `चरण ${stage.id} का विवरण` : `Stage ${stage.id} details`}
                     </span>
-                    <h3 className="mt-1 text-xl font-bold text-navy">{stage.title}</h3>
+                    <h3 className="mt-1 text-xl font-bold text-navy">{getStageTitle(stage.id)}</h3>
                   </div>
                   <span className="rounded-full bg-success/15 px-3 py-1 text-sm font-semibold text-success">
                     {stage.badge}

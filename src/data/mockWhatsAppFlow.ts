@@ -1,256 +1,178 @@
-export interface WACardAction {
-  id: string;
-  label: string;
-  type: "call" | "download" | "link";
-  payload: string;
-}
-
-export interface WACardData {
-  title: string;
-  badge: string;
-  subtitle?: string;
-  metrics: string[];
-  actions?: WACardAction[];
-  footer?: string;
-}
-
 export interface WAMessage {
   id: string;
   sender: "user" | "bot";
   type: "text" | "voice" | "card";
   text?: string;
-  text_en?: string;
   voiceDuration?: string;
-  cardData?: WACardData;
+  waveform?: number[];
+  cardData?: {
+    tradeTitle: string;
+    metrics: { label: string; value: string; icon: string }[];
+    auditTag: string;
+    actionButtons: string[];
+  };
   timestamp: string;
+  status: "sent" | "delivered" | "read";
   isRead?: boolean;
 }
 
-export interface PromptChip {
+export interface ScenarioChip {
   id: string;
   label_hi: string;
   label_en: string;
   userMessage: WAMessage;
-  botReply: WAMessage[];
+  botReplies: WAMessage[];
 }
 
-export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
+export type PromptChip = ScenarioChip;
+
+export const DEFAULT_INITIAL_MESSAGES: WAMessage[] = [
+  {
+    id: "m_init_1",
+    sender: "bot",
+    type: "text",
+    text: "नमस्ते रमेश जी! मैं मित्रास्किल (MitraSkill) करियर सहायक हूँ। मुझे ज्ञात हुआ है कि आप अमन के आईटीआई (ITI) करियर को लेकर चिंतित हैं। आप बेझिझक बोलकर या लिखकर अपना प्रश्न पूछ सकते हैं।",
+    timestamp: "10:12 AM",
+    status: "read",
+    isRead: true,
+  },
+];
+
+export const SCENARIO_CHIPS: ScenarioChip[] = [
   {
     id: "CHIP_SALARY",
-    label_hi: "💰 वेतन कितना मिलेगा?",
+    label_hi: "💰 वेतन कितना मिलेगा? (Salary Doubt)",
     label_en: "💰 What is the starting salary?",
     userMessage: {
       id: "u_sal",
       sender: "user",
       type: "voice",
-      voiceDuration: "0:09",
-      text: "नमस्ते, क्या ऑटोमोटिव मेकाट्रॉनिक्स करने के बाद अच्छी नौकरी और पक्का वेतन मिलता है?",
+      voiceDuration: "0:08",
+      waveform: [35, 60, 45, 80, 95, 65, 40, 75, 90, 85, 50, 70, 40, 30],
+      text: "नमस्ते, क्या ऑटोमोटिव मेकाट्रॉनिक्स के बाद सच में अच्छी पगार मिलती है या समय बर्बाद होगा?",
       timestamp: "10:14 AM",
+      status: "read",
       isRead: true,
     },
-    botReply: [
+    botReplies: [
       {
-        id: "b_sal_voice",
+        id: "b_sal_v",
         sender: "bot",
         type: "voice",
         voiceDuration: "0:24",
-        text: "नमस्ते रमेश जी। ऑटोमोटिव मेकाट्रॉनिक्स में पिछले वर्ष का DGT ऑडिट प्लेसमेंट 88.4% रहा है। शुरुआती वेतन ₹18,500 से ₹24,500 प्रति माह रहता है। नीचे दिए गए सत्यापित विवरण कार्ड में आप प्रमुख भर्तीकर्ताओं की सूची देख सकते हैं।",
+        waveform: [
+          30, 45, 75, 90, 60, 100, 85, 70, 95, 80, 65, 90, 75, 50, 85, 60, 40, 70, 90, 65, 45, 30,
+        ],
+        text: "रमेश जी, राजकीय आईटीआई साकेत (मेरठ) के 2024 DGT ऑडिट के अनुसार, ऑटोमोटिव मेकाट्रॉनिक्स के 88.4% छात्रों को टाटा मोटर्स और उनो मिंडा में ₹18,500 से ₹24,500 प्रति माह का शुरुआती वेतन मिला है।",
         timestamp: "10:14 AM",
+        status: "read",
+        isRead: true,
       },
       {
-        id: "b_sal_card",
+        id: "b_sal_c",
         sender: "bot",
         type: "card",
         cardData: {
-          title: "ऑटोमोटिव मेकाट्रॉनिक्स (NSQF Level 4)",
-          badge: "DGT Audit 2024 Verified",
-          subtitle: "सरकारी औद्योगिक प्रशिक्षण संस्थान (ITI मेरठ)",
+          tradeTitle: "Automotive Mechatronics (NSQF Level 4)",
           metrics: [
-            "🟢 सत्यापित प्लेसमेंट: 88.4% (DGT Audit 2024)",
-            "💵 शुरुआती वेतन: ₹18,500 – ₹24,500 / माह",
-            "🏢 प्रमुख भर्तीकर्ता: Tata Motors, Uno Minda, Hero MotoCorp",
+            { label: "सत्यापित प्लेसमेंट", value: "88.4% (Campus Placed)", icon: "CheckCircle2" },
+            { label: "शुरुआती वेतन", value: "₹18,500 - ₹24,500 / माह", icon: "TrendingUp" },
+            { label: "शीर्ष भर्तीकर्ता", value: "Tata Motors, Uno Minda, Hero", icon: "Building2" },
           ],
-          actions: [
-            {
-              id: "act_call_nodal",
-              label: "📞 नोडल अधिकारी से बात करें",
-              type: "call",
-              payload: "श्री आर. के. शर्मा (नोडल प्लेसमेंट अधिकारी): +91 98765 43210",
-            },
-            {
-              id: "act_download_consent",
-              label: "📜 परिवार सहमति पत्र डाउनलोड",
-              type: "download",
-              payload: "https://mitraskill.msde.gov.in/docs/family-consent-form-hi.pdf",
-            },
-          ],
-          footer: "DGT डेटाबेस ट्रैकर संख्या: MSDE-2024-TR-9941",
+          auditTag: "🟢 सत्यापित DGT व NCVET ऑडिट 2024 (मेरठ कॉरिडोर)",
+          actionButtons: ["📞 नोडल अधिकारी से बात करें", "📄 वेतन प्रमाण पत्र देखें"],
         },
         timestamp: "10:15 AM",
+        status: "read",
+        isRead: true,
       },
     ],
   },
   {
     id: "CHIP_STIGMA",
-    label_hi: "👔 सड़क किनारे मैकेनिक का काम है?",
-    label_en: "👔 Is there social respect in this trade?",
+    label_hi: "👔 सड़क किनारे मैकेनिक का काम है? (Social Stigma)",
+    label_en: "👔 Is it roadside mechanic work?",
     userMessage: {
       id: "u_stigma",
       sender: "user",
       type: "voice",
       voiceDuration: "0:11",
-      text: "रिश्तेदार कहते हैं कि मैकेनिक का काम सड़क किनारे होता है और इसमें इज्जत नहीं है।",
+      waveform: [40, 70, 85, 60, 90, 100, 75, 55, 80, 95, 65, 50, 35],
+      text: "रिश्तेदार कहते हैं कि यह सड़क किनारे गाड़ी सुधारने का काम है, इसमें समाज में कोई इज्जत नहीं है।",
       timestamp: "10:16 AM",
+      status: "read",
       isRead: true,
     },
-    botReply: [
+    botReplies: [
       {
-        id: "b_stigma_voice",
+        id: "b_stigma_v",
         sender: "bot",
         type: "voice",
         voiceDuration: "0:28",
-        text: "आपकी चिंता पूरी तरह स्वाभाविक है रमेश जी। आधुनिक मेकाट्रॉनिक्स सड़क किनारे का काम नहीं है। छात्र हाई-टेक एसी लैब्स में कंप्यूटराइज्ड OBD-II स्कैनर और इलेक्ट्रिक वाहन डायग्नोस्टिक्स सीखते हैं। उन्हें कॉर्पोरेट सर्विस सेंटर्स में 'डायग्नोस्टिक स्पेशलिस्ट' पद मिलता है।",
+        waveform: [
+          25, 50, 70, 85, 100, 90, 75, 60, 95, 80, 70, 85, 65, 90, 100, 80, 60, 75, 55, 40, 30,
+        ],
+        text: "यह सोचना स्वाभाविक है, लेकिन आधुनिक मेकाट्रॉनिक्स सड़क किनारे का काम नहीं है। छात्र वातानुकूलित कंप्यूटर लैब में डिजिटल स्कैनर और लैपटॉप से इलेक्ट्रिक वाहनों की जांच करते हैं। इसे जूनियर डायग्नोस्टिक स्पेशलिस्ट कहा जाता है।",
         timestamp: "10:16 AM",
-      },
-      {
-        id: "b_stigma_card",
-        sender: "bot",
-        type: "card",
-        cardData: {
-          title: "आधुनिक कार्यस्थल व सम्मान (Industry 4.0)",
-          badge: "Industry 4.0 Certified",
-          subtitle: "हाई-टेक वर्कशॉप व डायग्नोस्टिक लैब",
-          metrics: [
-            "🔬 कार्यस्थल: फुली एयर-कंडीशंड डायग्नोस्टिक लैब व EV रोबोटिक्स वर्कशॉप",
-            "👔 पदनाम: सर्टिफाइड ऑटोमोटिव डायग्नोस्टिक स्पेशलिस्ट (NSQF Level 4)",
-            "🏢 प्रमुख भर्तीकर्ता: Maruti Suzuki Arena, MG Motors, Mahindra Auto",
-          ],
-          actions: [
-            {
-              id: "act_call_nodal",
-              label: "📞 नोडल अधिकारी से बात करें",
-              type: "call",
-              payload: "श्री आर. के. शर्मा (नोडल प्लेसमेंट अधिकारी): +91 98765 43210",
-            },
-            {
-              id: "act_download_consent",
-              label: "📜 परिवार सहमति पत्र डाउनलोड",
-              type: "download",
-              payload: "https://mitraskill.msde.gov.in/docs/family-consent-form-hi.pdf",
-            },
-          ],
-          footer: "Industry 4.0 मानकीकृत लैब व आधुनिक उपकरण युक्त परिसर",
-        },
-        timestamp: "10:17 AM",
+        status: "read",
+        isRead: true,
       },
     ],
   },
   {
     id: "CHIP_DEGREE",
-    label_hi: "🎓 क्या आगे डिग्री मिल सकती है?",
-    label_en: "🎓 Can he study for a degree later?",
+    label_hi: "🎓 क्या आगे डिग्री मिल सकती है? (NCrF Degree)",
+    label_en: "🎓 Can he get a university degree?",
     userMessage: {
-      id: "u_degree",
+      id: "u_deg",
       sender: "user",
       type: "text",
-      text: "क्या ITI के बाद मेरा बेटा डिप्लोमा या डिग्री कर सकता है?",
+      text: "क्या आईटीआई के बाद मेरा बेटा आगे चलकर बी.टेक या इंजीनियरिंग डिप्लोमा कर सकता है?",
       timestamp: "10:18 AM",
+      status: "read",
       isRead: true,
     },
-    botReply: [
+    botReplies: [
       {
-        id: "b_degree_voice",
+        id: "b_deg_v",
         sender: "bot",
         type: "voice",
-        voiceDuration: "0:22",
-        text: "बिल्कुल! राष्ट्रीय क्रेडिट फ्रेमवर्क (NCrF) के तहत ITI के 40 क्रेडिट सीधे पॉलिटेक्निक डिप्लोमा के द्वितीय वर्ष में लेटरल एंट्री के लिए मान्य हैं। इसके बाद B.Tech या B.Voc डिग्री भी पूरी की जा सकती है। पढ़ाई का रास्ता कभी बंद नहीं होता।",
+        voiceDuration: "0:23",
+        waveform: [35, 65, 80, 95, 70, 85, 90, 60, 75, 100, 85, 65, 50, 70, 85, 60, 40, 30],
+        text: "जी हाँ! राष्ट्रीय क्रेडिट फ्रेमवर्क (NCrF) के तहत 2 वर्ष की आईटीआई से 80 क्रेडिट मिलते हैं। इससे छात्र को राजकीय पॉलिटेक्निक डिप्लोमा के द्वितीय वर्ष में सीधे लेटरल एंट्री मिलती है, और उसके बाद B.Tech में प्रवेश मिल सकता है।",
         timestamp: "10:18 AM",
-      },
-      {
-        id: "b_degree_card",
-        sender: "bot",
-        type: "card",
-        cardData: {
-          title: "NCrF क्रेडिट मोबिलिटी (डिप्लोमा व डिग्री पाथवे)",
-          badge: "NCrF Vertical Mobility",
-          subtitle: "DGT & AICTE संयुक्त शैक्षणिक मान्यता",
-          metrics: [
-            "🎓 वर्टिकल पाथवे: ITI (Level 4) ➔ डिप्लोमा 2nd Year ➔ B.Tech / B.Voc",
-            "🔢 क्रेडिट ट्रांसफर: 40 NCrF एकेडमिक क्रेडिट्स सीधे ट्रांसफर योग्य",
-            "🏛️ संबद्ध बोर्ड: AICTE व राज्य तकनीकी शिक्षा बोर्ड द्वारा अनुमोदित",
-          ],
-          actions: [
-            {
-              id: "act_call_nodal",
-              label: "📞 नोडल अधिकारी से बात करें",
-              type: "call",
-              payload: "श्री आर. के. शर्मा (नोडल प्लेसमेंट अधिकारी): +91 98765 43210",
-            },
-            {
-              id: "act_download_consent",
-              label: "📜 परिवार सहमति पत्र डाउनलोड",
-              type: "download",
-              payload: "https://mitraskill.msde.gov.in/docs/family-consent-form-hi.pdf",
-            },
-          ],
-          footer: "National Credit Framework (NCrF) दिशा-निर्देश 2023 के तहत अधिकृत",
-        },
-        timestamp: "10:19 AM",
+        status: "read",
+        isRead: true,
       },
     ],
   },
   {
     id: "CHIP_SAFETY",
-    label_hi: "🛡️ लड़कियों के लिए सुरक्षा व बस?",
-    label_en: "🛡️ What about safety for girls?",
+    label_hi: "🛡️️ लड़कियों के लिए सुरक्षा व बस? (Female Safety)",
+    label_en: "🛡️ Safety and transit for female students?",
     userMessage: {
-      id: "u_safety",
+      id: "u_safe",
       sender: "user",
       type: "text",
-      text: "क्या तकनीकी कोर्स लड़कियों के लिए सुरक्षित हैं? आने-जाने की क्या व्यवस्था है?",
+      text: "क्या सोलर और टेक्निकल कोर्स लड़कियों के लिए सुरक्षित हैं? आने-जाने की क्या व्यवस्था है?",
       timestamp: "10:20 AM",
+      status: "read",
       isRead: true,
     },
-    botReply: [
+    botReplies: [
       {
-        id: "b_safety_voice",
+        id: "b_safe_v",
         sender: "bot",
         type: "voice",
-        voiceDuration: "0:26",
-        text: "लड़कियों की सुरक्षा हमारी सर्वोच्च प्राथमिकता है। ITI कैंपस में 24 घंटे CCTV निगरानी और समर्पित महिला सुरक्षा सेल है। इसके अलावा जिला प्रशासन द्वारा छात्राओं के लिए सुरक्षित परिवहन बस सेवा और ₹1,000 प्रति माह अतिरिक्त कन्या कौशल वजीफा भी उपलब्ध है।",
+        voiceDuration: "0:25",
+        waveform: [30, 55, 75, 90, 100, 80, 65, 85, 95, 70, 60, 80, 90, 75, 60, 45, 30],
+        text: "मेरठ में राजकीय महिला आईटीआई में 100% सीसीटीवी निगरानी है और यूपी मिशन शक्ति के तहत मवाना और सरधना ब्लॉक से सीधी सुरक्षित सरकारी बस सेवा उपलब्ध है। पूजा वर्मा जैसी छात्राएं आज टाटा पावर में ₹23,500/माह पर कार्यरत हैं।",
         timestamp: "10:20 AM",
-      },
-      {
-        id: "b_safety_card",
-        sender: "bot",
-        type: "card",
-        cardData: {
-          title: "महिला सुरक्षा व विशेष सुविधाएं (Campus Safety)",
-          badge: "Women-First Campus Initiative",
-          subtitle: "सुरक्षित वातावरण व समर्पित सहायता",
-          metrics: [
-            "🚌 सुरक्षित परिवहन: निःशुल्क जिला परिवहन पास व सुरक्षित बस स्टॉप पिक-अप",
-            "🛡️ सुरक्षित परिसर: 24x7 CCTV निगरानी व समर्पित महिला शिकायत निवारण सेल",
-            "🎁 कन्या प्रोत्साहन: ₹1,000 / माह अतिरिक्त कन्या कौशल वजीफा (DBT)",
-          ],
-          actions: [
-            {
-              id: "act_call_nodal",
-              label: "📞 नोडल अधिकारी से बात करें",
-              type: "call",
-              payload: "श्रीमती सुनीता वर्मा (महिला समन्वय अधिकारी): +91 98765 43215",
-            },
-            {
-              id: "act_download_consent",
-              label: "📜 परिवार सहमति पत्र डाउनलोड",
-              type: "download",
-              payload: "https://mitraskill.msde.gov.in/docs/family-consent-form-hi.pdf",
-            },
-          ],
-          footer: "MSDE महिला कौशल विकास नीति 2024 के अंतर्गत संरक्षित",
-        },
-        timestamp: "10:21 AM",
+        status: "read",
+        isRead: true,
       },
     ],
   },
 ];
+
+export const WHATSAPP_PROMPT_CHIPS = SCENARIO_CHIPS;

@@ -17,8 +17,113 @@ import {
 import { COUNSELOR_GREETING_AUDIO_SCRIPT, MOCK_COUNSELOR } from "@/data/mockCounselor";
 import type { Lang } from "@/lib/app-context";
 import { useIndicVoice } from "@/utils/useIndicVoice";
+import { useLanguageVoice, type SupportedLanguage } from "@/context/LanguageVoiceContext";
 
 type CallState = "dossier" | "connecting" | "active" | "completed";
+
+const COUNSELOR_CONTENT: Record<SupportedLanguage, {
+  dialogTitle: string;
+  sampleProfile: string;
+  briefingTitle: string;
+  learner: string;
+  guardian: string;
+  trade: string;
+  familyConcern: string;
+  concernVal: string;
+  learnerInterest: string;
+  interestVal: string;
+  location: string;
+  officerTitle: string;
+  consentText: string;
+  startBtn: string;
+  endBtn: string;
+}> = {
+  en: {
+    dialogTitle: "Counselor Referral & Live Triage",
+    sampleProfile: "Sample Profile · Prototype Bridge",
+    briefingTitle: "Session Briefing Dossier",
+    learner: "Learner / Student",
+    guardian: "Guardian / Father",
+    trade: "Selected Trade",
+    familyConcern: "Family Concern & Reservation Wage",
+    concernVal: "Social perception, repair stigma, and reservation wage ₹20,000/month",
+    learnerInterest: "Learner Interest",
+    interestVal: "EV computerized diagnostics and robotics career path",
+    location: "District Hub",
+    officerTitle: "Senior Vocational Guidance Officer · DGT Certified",
+    consentText: "I have reviewed this case dossier and consent to initiate the counselor arbitration bridge.",
+    startBtn: "Start Demo Audio Bridge",
+    endBtn: "End Demo Call",
+  },
+  hi: {
+    dialogTitle: "काउंसलर रेफ़रल एवं लाइव मध्यस्थता",
+    sampleProfile: "नमूना प्रोफ़ाइल · प्रोटोटाइप ब्रिज",
+    briefingTitle: "सत्र ब्रीफिंग दस्तावेज़",
+    learner: "छात्र / उम्मीदवार",
+    guardian: "अभिभावक / पिता",
+    trade: "चुना हुआ ट्रेड",
+    familyConcern: "पारिवारिक चिंता व अपेक्षित न्यूनतम वेतन",
+    concernVal: "सामाजिक प्रतिष्ठा, मैकेनिक का काम समझने की चिंता, अपेक्षित न्यूनतम वेतन ₹20,000/माह",
+    learnerInterest: "छात्र की रुचि",
+    interestVal: "ईवी कम्प्यूटरीकृत डायग्नोस्टिक्स एवं रोबोटिक्स में तकनीकी भविष्य",
+    location: "जिला केंद्र",
+    officerTitle: "वरिष्ठ व्यावसायिक मार्गदर्शन अधिकारी · डीजीटी प्रमाणित",
+    consentText: "मैंने यह केस विवरण देखा है और काउंसलर मध्यस्थता ब्रिज शुरू करने की सहमति देता/देती हूँ।",
+    startBtn: "डेमो ऑडियो ब्रिज शुरू करें",
+    endBtn: "डेमो कॉल समाप्त करें",
+  },
+  mr: {
+    dialogTitle: "समुपदेशक संदर्भ व थेट मदत",
+    sampleProfile: "नमुना प्रोफाइल · प्रोटोटाइप ब्रीज",
+    briefingTitle: "सत्र माहिती गोषवारा",
+    learner: "विद्यार्थी / उमेदवार",
+    guardian: "पालक / वडील",
+    trade: "निवडलेला ट्रेड",
+    familyConcern: "कौटुंबिक काळजी व अपेक्षित किमान वेतन",
+    concernVal: "सामाजिक प्रतिष्ठा, गॅरेजच्या कामाची भीती, अपेक्षित किमान पगार ₹२०,०००/महिना",
+    learnerInterest: "विद्यार्थ्याची आवड",
+    interestVal: "ईव्ही संगणकीय चाचणी आणि रोबोटिक्स तंत्रज्ञान",
+    location: "जिल्हा केंद्र",
+    officerTitle: "वरिष्ठ व्यावसायिक मार्गदर्शन अधिकारी · DGT प्रमाणित",
+    consentText: "मी ही केस माहिती पाहिली असून समुपदेशक मध्यस्थी सत्र सुरू करण्यास सहमती देतो.",
+    startBtn: "थेट ऑडिओ सत्र सुरू करा",
+    endBtn: "कॉल पूर्ण करा",
+  },
+  bn: {
+    dialogTitle: "পরামর্শদাতা রেফারেল ও সহায়তা",
+    sampleProfile: "নমুনা প্রোফাইল · প্রোটোটাইপ ব্রিজ",
+    briefingTitle: "সেশন বিবরণী নথি",
+    learner: "ছাত্র / প্রার্থী",
+    guardian: "অভিভাবক / পিতা",
+    trade: "নির্বাচিত ট্রেড",
+    familyConcern: "পারিবারিক উদ্বেগ ও প্রত্যাশিত ন্যূনতম বেতন",
+    concernVal: "সামাজিক মর্যাদা, মেকানিক কাজের দ্বিধা ও ন্যূনতম প্রত্যাশিত বেতন ₹২০,০০০/মাস",
+    learnerInterest: "ছাত্রের আগ্রহ",
+    interestVal: "ইভি কম্পিউটারাইজড ডায়াগনস্টিকস ও রোবোটিক্স ক্যারিয়ার পথ",
+    location: "জেলা কেন্দ্র",
+    officerTitle: "বরিষ্ঠ বৃত্তিমূলক নির্দেশিকা কর্মকর্তা · ডিজিটি প্রত্যয়িত",
+    consentText: "আমি কেস নথি পর্যালোচনা করেছি এবং মধ্যস্থতা ব্রিজ শুরু করার সম্মতি দিচ্ছি।",
+    startBtn: "অডিও ব্রিজ শুরু করুন",
+    endBtn: "কল সমাপ্ত করুন",
+  },
+  ta: {
+    dialogTitle: "ஆலோசகர் பரிந்துரை மற்றும் நேரடி உதவி",
+    sampleProfile: "மாதிரி சுயவிவரம் · நேரடி இணைப்பு",
+    briefingTitle: "அமர்வு சுருக்க ஆவணம்",
+    learner: "மாணவர் / விண்ணப்பதாரர்",
+    guardian: "பெற்றோர் / தந்தை",
+    trade: "தேர்ந்தெடுக்கப்பட்ட பிரிவு",
+    familyConcern: "குடும்ப கவலை மற்றும் குறைந்தபட்ச ஊதிய எதிர்பார்ப்பு",
+    concernVal: "சமூக அந்தஸ்து, மெக்கானிக் வேலை என்ற தயக்கம் மற்றும் தொடக்க ஊதியம் ₹20,000/மாதம்",
+    learnerInterest: "மாணவரின் ஆர்வம்",
+    interestVal: "மின்சார வாகன கணினி பரிசோதனை மற்றும் ரோபோட்டிக்ஸ் துறை",
+    location: "மாவட்ட மையம்",
+    officerTitle: "முதுநிலை தொழிற்பயிற்சி வழிகாட்டு அலுவலர் · DGT அங்கீகரிக்கப்பட்டது",
+    consentText: "நான் இந்த வழக்கின் விவரங்களை பார்வையிட்டேன் மற்றும் ஆலோசகர் உரையாடலை தொடங்க ஒப்புதல் அளிக்கிறேன்.",
+    startBtn: "ஆடியோ இணைப்பைத் தொடங்கவும்",
+    endBtn: "அழைப்பை முடிக்கவும்",
+  },
+};
 
 function closeTriage(onClose: () => void) {
   if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -38,17 +143,20 @@ type Props = {
 export function CounselorTriageModal({
   isOpen,
   onClose,
-  lang,
+  lang: propLang,
   selectedTradeName,
   currentDivergence,
 }: Props) {
+  const { language } = useLanguageVoice();
+  const activeLang = language || propLang || "en";
+  const c = COUNSELOR_CONTENT[activeLang] || COUNSELOR_CONTENT.en;
   const [state, setState] = useState<CallState>("dossier");
   const [consent, setConsent] = useState(false);
   const [muted, setMuted] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [notice, setNotice] = useState("");
   const { speak, stop } = useIndicVoice();
-  const hi = lang === "hi";
+  const hi = activeLang === "hi";
 
   useEffect(() => {
     if (!isOpen) return;
@@ -88,7 +196,7 @@ export function CounselorTriageModal({
   );
 
   if (!isOpen) return null;
-  const script = COUNSELOR_GREETING_AUDIO_SCRIPT[lang];
+  const script = COUNSELOR_GREETING_AUDIO_SCRIPT[activeLang as Lang] || COUNSELOR_GREETING_AUDIO_SCRIPT.en;
   const playGreeting = () => {
     if (!("speechSynthesis" in window)) {
       setNotice(
@@ -98,7 +206,7 @@ export function CounselorTriageModal({
       );
       return;
     }
-    speak(script, lang);
+    speak(script, activeLang as Lang);
   };
   const time = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   const connect = () => {
@@ -130,12 +238,10 @@ export function CounselorTriageModal({
             </span>
             <div>
               <h2 id="counselor-dialog-title" className="font-bold">
-                {hi ? "काउंसलर रेफ़रल डेमो" : "Counselor referral demo"}
+                {c.dialogTitle}
               </h2>
               <p className="text-xs text-white/70">
-                {hi
-                  ? "नमूना प्रोफ़ाइल · कोई वास्तविक कॉल नहीं"
-                  : "Sample profile · no real call is placed"}
+                {c.sampleProfile}
               </p>
             </div>
           </div>
@@ -163,7 +269,7 @@ export function CounselorTriageModal({
                   <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
                   <div>
                     <p className="font-semibold">
-                      {hi ? "साझा करने से पहले सारांश देखें" : "Review the briefing before sharing"}
+                      {c.briefingTitle}
                     </p>
                     <p className="mt-1 text-sm">
                       {hi
@@ -176,7 +282,7 @@ export function CounselorTriageModal({
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
                     <div className="flex items-center gap-2 font-bold text-navy">
                       <FileText className="h-5 w-5 text-primary" />{" "}
-                      {hi ? "सत्र ब्रीफिंग" : "Session briefing"}
+                      {c.briefingTitle}
                     </div>
                     <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-navy">
                       Δ {currentDivergence.toFixed(2)}
@@ -184,23 +290,23 @@ export function CounselorTriageModal({
                   </div>
                   <dl className="grid gap-3 text-sm sm:grid-cols-2">
                     <Data
-                      label={hi ? "छात्र" : "Learner"}
+                      label={c.learner}
                       value="Aman Sharma · age 17 · Class 10 (58%)"
                     />
-                    <Data label={hi ? "अभिभावक" : "Guardian"} value="Ramesh Sharma · father" />
+                    <Data label={c.guardian} value="Ramesh Sharma · father" />
                     <Data
-                      label={hi ? "चुना हुआ ट्रेड" : "Selected trade"}
+                      label={c.trade}
                       value={selectedTradeName}
                     />
                     <Data
-                      label={hi ? "परिवार की चिंता" : "Family concern"}
-                      value="Career stability, social perception and income expectations"
+                      label={c.familyConcern}
+                      value={c.concernVal}
                     />
                     <Data
-                      label={hi ? "छात्र की रुचि" : "Learner interest"}
-                      value="Hands-on technical learning and future study options"
+                      label={c.learnerInterest}
+                      value={c.interestVal}
                     />
-                    <Data label={hi ? "स्थान" : "Location"} value="Meerut, Uttar Pradesh" />
+                    <Data label={c.location} value="Meerut, Uttar Pradesh" />
                   </dl>
                 </div>
                 <div className="flex items-start gap-3 rounded-2xl border bg-card p-4">
@@ -211,10 +317,10 @@ export function CounselorTriageModal({
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-bold text-navy">{MOCK_COUNSELOR.name}</p>
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900">
-                        {hi ? "नमूना प्रोफ़ाइल" : "Sample profile"}
+                        {c.sampleProfile}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-sm text-muted-foreground">{MOCK_COUNSELOR.title}</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">{c.officerTitle}</p>
                     <p className="text-sm text-muted-foreground">
                       {MOCK_COUNSELOR.center} · {MOCK_COUNSELOR.phone_masked}
                     </p>
@@ -233,9 +339,7 @@ export function CounselorTriageModal({
                     className="mt-0.5 h-4 w-4 accent-primary"
                   />
                   <span>
-                    {hi
-                      ? "मैंने ऊपर दिखाया गया डेमो सारांश देखा है और समझता/समझती हूँ कि यह अभी साझा नहीं किया जा रहा।"
-                      : "I reviewed the demo briefing above and understand it will not be transmitted in this prototype."}
+                    {c.consentText}
                   </span>
                 </label>
                 <button
@@ -245,7 +349,7 @@ export function CounselorTriageModal({
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-bold text-primary-foreground transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Phone className="h-5 w-5" />
-                  {hi ? "डेमो ऑडियो ब्रिज शुरू करें" : "Start demo audio bridge"}
+                  {c.startBtn}
                 </button>
               </motion.div>
             )}
@@ -309,7 +413,7 @@ export function CounselorTriageModal({
                   </div>
                   <div
                     className="mx-auto max-w-xl rounded-2xl border border-white/10 bg-white/10 p-4 text-sm leading-relaxed text-white/90"
-                    lang={lang}
+                    lang={activeLang}
                   >
                     {script}
                   </div>
@@ -343,10 +447,10 @@ export function CounselorTriageModal({
                 <button
                   type="button"
                   onClick={finish}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-3 font-bold text-white transition hover:bg-rose-700"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-3 font-bold text-white transition hover:bg-rose-700 cursor-pointer"
                 >
                   <PhoneOff className="h-5 w-5" />
-                  {hi ? "डेमो कॉल समाप्त करें" : "End demo call"}
+                  {c.endBtn}
                 </button>
               </motion.div>
             )}

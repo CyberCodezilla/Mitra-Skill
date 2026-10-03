@@ -7,6 +7,7 @@ import { NcrfLadderStepper } from "@/components/mobility/NcrfLadderStepper";
 import { CreditMathExplainer } from "@/components/mobility/CreditMathExplainer";
 import { SocialStatusMatrix } from "@/components/mobility/SocialStatusMatrix";
 import { useIndicVoice } from "@/utils/useIndicVoice";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export const Route = createFileRoute("/mobility")({
   head: () => ({
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/mobility")({
 
 function Mobility() {
   const { lang } = useApp();
+  const { t: ui } = useTranslation();
+  const m = ui.mobility;
   const [tradeId, setTradeId] = useState("AUTO_MECH_01");
   const [activeStage, setActiveStage] = useState(2);
   const { speak, stop, isSpeaking: playing } = useIndicVoice();
@@ -36,10 +39,7 @@ function Mobility() {
     <div className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:pt-8">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm font-semibold text-primary">
-          3. {hi ? "शैक्षणिक गतिशीलता" : "Degree Mobility"}{" "}
-          <span className="text-muted-foreground">
-            ({hi ? "शैक्षणिक गतिशीलता" : "NCrF pathway"})
-          </span>
+          {m.stepBadge}
         </div>
         <div className="flex flex-wrap gap-2">
           {MOCK_TRADES.map((item) => (
@@ -61,14 +61,10 @@ function Mobility() {
               <ShieldCheck className="h-4 w-4" /> National Credit Framework · NEP 2020
             </div>
             <h1 className="text-3xl font-bold leading-tight text-navy sm:text-4xl">
-              {hi
-                ? "राष्ट्रीय क्रेडिट फ्रेमवर्क (NCrF) - डिग्री एवं डिप्लोमा की राह"
-                : "National Credit Framework (NCrF) Academic Mobility Pathway"}
+              {m.title}
             </h1>
             <p className="mt-3 max-w-3xl text-base text-muted-foreground sm:text-lg">
-              {hi
-                ? "व्यावसायिक शिक्षा आगे बढ़ने का रास्ता है। ITI में अर्जित क्रेडिट आगे की पढ़ाई में गिने जा सकते हैं, लागू प्रवेश नियमों के अनुसार।"
-                : "Vocational training is not a dead end. Credits earned in ITI can support further diploma and university study, subject to applicable admission rules."}
+              {m.subtitle}
             </p>
           </div>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-navy text-white">
@@ -91,9 +87,7 @@ function Mobility() {
             playing
               ? stop()
               : speak(
-                  lang === "hi"
-                    ? "NCrF framework ke tahat, seekhne ke ghante academic credit mein badle ja sakte hain. Credit acceptance aur admission sambandhit sansthan ke niyamon par nirbhar hai."
-                    : "Under the NCrF framework, learning hours may translate into academic credits. Credit acceptance and admission depend on the rules of the receiving institution.",
+                  `${m.title}. ${m.subtitle}. ${m.creditMathTitle}: ${m.creditMathDesc}`,
                   lang,
                 )
           }
@@ -106,15 +100,15 @@ function Mobility() {
       >
         <Link
           to="/counsel"
-          className="inline-flex items-center justify-center gap-2 rounded-xl border bg-white px-4 py-3 font-semibold text-navy"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border bg-white px-4 py-3 font-semibold text-navy cursor-pointer"
         >
-          <ArrowLeft className="h-4 w-4" /> {hi ? "संवाद पर वापस जाएँ" : "Back to Dialogue"}
+          <ArrowLeft className="h-4 w-4" /> {m.backBtn}
         </Link>
         <Link
           to="/accord"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#E87722] px-5 py-3 font-semibold text-white shadow-saffron hover:bg-[#d0681a]"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#E87722] px-5 py-3 font-semibold text-white shadow-saffron hover:bg-[#d0681a] cursor-pointer"
         >
-          📜 {hi ? "परिवार रोज़गार पत्र बनाएँ" : "Generate Parivaar Rozgar Patra (Family Accord)"}{" "}
+          📜 {m.generateAccordBtn}{" "}
           <ArrowRight className="h-4 w-4" />
         </Link>
       </nav>

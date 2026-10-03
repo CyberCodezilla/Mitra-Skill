@@ -4,6 +4,7 @@ import { Check, Download, Share2, Shield } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { MOCK_TRADES } from "@/data/mockTrades";
 import { CertificateCard } from "@/components/accord/CertificateCard";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export const Route = createFileRoute("/accord")({
   head: () => ({ meta: [{ title: "Parivaar Rozgar Patra — MitraSkill" }] }),
@@ -11,6 +12,8 @@ export const Route = createFileRoute("/accord")({
 });
 function Accord() {
   const { lang } = useApp();
+  const { t: ui } = useTranslation();
+  const a = ui.accord;
   const [tradeId, setTradeId] = useState("AUTO_MECH_01");
   const [shared, setShared] = useState(false);
   const trade = MOCK_TRADES.find((item) => item.trade_id === tradeId)!;
@@ -76,9 +79,7 @@ function Accord() {
     };
   }, []);
   const share = async () => {
-    const message = hi
-      ? "हमारे परिवार ने अमन के सुरक्षित भविष्य के लिए ऑटोमोटिव मेकाट्रॉनिक्स का चयन किया है। Parivaar Rozgar Patra: "
-      : "Our family has chosen Automotive Mechatronics for Aman's future. Parivaar Rozgar Patra: ";
+    const message = `${a.officialTitle}: `;
     const link = window.location.href;
     try {
       await navigator.clipboard.writeText(`${message}${link}`);
@@ -96,20 +97,20 @@ function Accord() {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-sm font-semibold text-success">
-            4. {hi ? "परिवार रोज़गार पत्र" : "Family Accord"} · {hi ? "पूरा हुआ" : "Completed"}{" "}
+            {a.stepBadge}{" "}
             <Check className="inline h-4 w-4" />
           </div>
           <h1 className="mt-2 text-2xl font-bold text-navy sm:text-3xl">
-            {hi ? "परिवार की सहमति का प्रमाणपत्र" : "A milestone for the whole family"}
+            {a.officialTitle}
           </h1>
         </div>
         <span className="flex items-center gap-1 rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
-          <Shield className="h-4 w-4" /> {hi ? "प्रोटोटाइप प्रमाणपत्र" : "Prototype certificate"}
+          <Shield className="h-4 w-4" /> {a.verifiedSeal}
         </span>
       </div>
       <div className="mb-3 flex flex-wrap items-center gap-2 print:hidden">
         <span className="text-sm font-semibold text-muted-foreground">
-          {hi ? "चयनित व्यवसाय:" : "Selected vocation:"}
+          {a.tradeLabel}
         </span>
         {MOCK_TRADES.map((item) => (
           <button
@@ -126,32 +127,30 @@ function Accord() {
       <div className="mt-5 flex flex-wrap justify-center gap-3 print:hidden">
         <button
           onClick={() => window.print()}
-          className="inline-flex items-center gap-2 rounded-xl bg-navy px-4 py-3 font-semibold text-white"
+          className="inline-flex items-center gap-2 rounded-xl bg-navy px-4 py-3 font-semibold text-white cursor-pointer"
         >
           <Download className="h-4 w-4" />
-          {hi ? "PDF प्रमाणपत्र डाउनलोड करें" : "Download PDF Certificate"}
+          {a.downloadBtn}
         </button>
         <button
           onClick={share}
-          className="inline-flex items-center gap-2 rounded-xl border border-success px-4 py-3 font-semibold text-success"
+          className="inline-flex items-center gap-2 rounded-xl border border-success px-4 py-3 font-semibold text-success cursor-pointer"
         >
           <Share2 className="h-4 w-4" />
           {shared ? (
             <>
               <Check className="h-4 w-4" />
-              {hi ? "संदेश कॉपी हुआ" : "Message copied"}
+              <span>{a.shareBtn}</span>
             </>
-          ) : hi ? (
-            "WhatsApp पर साझा करें"
           ) : (
-            "Share via WhatsApp"
+            a.shareBtn
           )}
         </button>
         <Link
           to="/admin"
-          className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-semibold text-navy"
+          className="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-semibold text-navy cursor-pointer"
         >
-          🛡️ {hi ? "एडमिन टेलीमेट्री देखें" : "View Admin Telemetry"} →
+          🛡️ {a.adminLink}
         </Link>
       </div>
       <p className="mt-3 text-center text-xs text-muted-foreground print:hidden">

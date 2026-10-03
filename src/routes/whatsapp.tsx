@@ -1,25 +1,19 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import {
   ArrowRight,
   CheckCircle2,
-  ExternalLink,
-  Headphones,
   Laptop,
-  MessageSquare,
-  Moon,
   RotateCcw,
   ShieldCheck,
   Smartphone,
   Sparkles,
-  Sun,
-  Volume2,
 } from "lucide-react";
 import { PhoneMockupFrame } from "@/components/whatsapp/PhoneMockupFrame";
 import { WhatsAppChatInterface } from "@/components/whatsapp/WhatsAppChatInterface";
 import { WA_DARK_THEME, WA_LIGHT_THEME } from "@/components/whatsapp/whatsappTheme";
 import { useApp } from "@/lib/app-context";
-import { WHATSAPP_PROMPT_CHIPS } from "@/data/mockWhatsAppFlow";
+import { SCENARIO_CHIPS } from "@/data/mockWhatsAppFlow";
 
 export const Route = createFileRoute("/whatsapp")({
   head: () => ({
@@ -35,13 +29,51 @@ export const Route = createFileRoute("/whatsapp")({
 
 function WhatsAppSimulatorRoute() {
   const { lang } = useApp();
+  const navigate = useNavigate();
   const hi = lang === "hi";
   const [resetKey, setResetKey] = useState(0);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return document.documentElement.classList.contains("dark");
+  });
   const [externalTrigger, setExternalTrigger] = useState<{
     chipId: string;
     timestamp: number;
   } | null>(null);
+
+  // Automatically track platform-wide dark mode
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkDark = () => {
+      setIsDarkMode(document.documentElement.classList.contains("dark"));
+    };
+
+    checkDark();
+
+    // Listen to changes to the 'dark' class on <html> made by AppShell
+    const observer = new MutationObserver(() => {
+      checkDark();
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    // Also listen to storage events if changed across windows/tabs
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "mitraskill_theme") {
+        checkDark();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
 
   const activeTheme = isDarkMode ? WA_DARK_THEME : WA_LIGHT_THEME;
 
@@ -113,11 +145,11 @@ function WhatsAppSimulatorRoute() {
                   </span>
                   <div>
                     <h3 className="text-xs font-bold text-emerald-950 dark:text-emerald-200">
-                      Low-Literacy First Design
+                      Low-Literacy First: Voice-First Native Flow
                     </h3>
                     <p className="mt-0.5 text-xs leading-relaxed text-emerald-900/80 dark:text-emerald-300/80">
-                      Guardians in Tier-3 and rural blocks rarely read dense tables; they tap and
-                      listen to authentic regional voice notes delivered with native 1x/1.5x/2x audio
+                      Speech-to-speech interaction eliminates text apprehension for rural parents.
+                      Guardians listen to authentic regional voice notes with native 1x/1.5x/2x audio
                       controls.
                     </p>
                   </div>
@@ -129,11 +161,11 @@ function WhatsAppSimulatorRoute() {
                   </span>
                   <div>
                     <h3 className="text-xs font-bold text-blue-950 dark:text-blue-200">
-                      Deterministic Grounding & Zero Hallucination
+                      Zero-App Installation Friction
                     </h3>
                     <p className="mt-0.5 text-xs leading-relaxed text-blue-900/80 dark:text-blue-300/80">
-                      All responses strictly cite verified DGT tracer audits (2024), actual local
-                      industrial recruiters, and formal NCrF credit mobility guidelines.
+                      Leverages India's 500M+ active WhatsApp footprint without demanding device
+                      storage, APK sideloading, or portal sign-in credentials.
                     </p>
                   </div>
                 </div>
@@ -144,12 +176,11 @@ function WhatsAppSimulatorRoute() {
                   </span>
                   <div>
                     <h3 className="text-xs font-bold text-amber-950 dark:text-amber-200">
-                      Dual Output Modality
+                      Strict DGT Grounding (Zero Hallucination)
                     </h3>
                     <p className="mt-0.5 text-xs leading-relaxed text-amber-900/80 dark:text-amber-300/80">
-                      Every voice note is accompanied by an official WhatsApp Cloud API Interactive
-                      Template Card designed for household discussion and one-tap counselor
-                      handoff.
+                      Prevents hallucinations by directly quoting verified administrative data,
+                      audited campus placements (2024), and formal NCrF credit mobility frameworks.
                     </p>
                   </div>
                 </div>
@@ -169,7 +200,7 @@ function WhatsAppSimulatorRoute() {
               </div>
 
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {WHATSAPP_PROMPT_CHIPS.map((chip, idx) => (
+                {SCENARIO_CHIPS.map((chip, idx) => (
                   <button
                     key={chip.id}
                     type="button"
@@ -226,43 +257,13 @@ function WhatsAppSimulatorRoute() {
             </div>
           </div>
 
-          {/* Phone Frame Column (Right) with Floating Hardware Switch */}
+          {/* Phone Frame Column (Right) - Automatically synced with platform theme */}
           <div className="order-1 flex flex-col items-center lg:order-2">
-            {/* Floating Hardware Mode Toggle */}
-            <div className="mb-4 flex items-center rounded-2xl border border-slate-300 bg-white p-1 shadow-md transition-colors dark:border-slate-700 dark:bg-slate-900">
-              <button
-                type="button"
-                onClick={() => setIsDarkMode(false)}
-                className={`flex cursor-pointer items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
-                  !isDarkMode
-                    ? "bg-[#008069] text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                }`}
-              >
-                <Sun className="h-4 w-4" />
-                <span>WhatsApp Light Mode</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsDarkMode(true)}
-                className={`flex cursor-pointer items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
-                  isDarkMode
-                    ? "bg-[#1F2C34] text-[#25D366] shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                }`}
-              >
-                <Moon className="h-4 w-4" />
-                <span>WhatsApp Dark Mode</span>
-              </button>
-            </div>
-
             {/* Smartphone Chassis Frame */}
             <PhoneMockupFrame theme={activeTheme} isDark={isDarkMode}>
               <WhatsAppChatInterface
-                lang={lang}
                 theme={activeTheme}
-                isDark={isDarkMode}
+                onBackToPortal={() => navigate({ to: "/counsel" })}
                 onReset={resetKey}
                 externalTrigger={externalTrigger}
               />

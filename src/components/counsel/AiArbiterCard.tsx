@@ -23,6 +23,9 @@ import type { Lang } from "@/lib/app-context";
 import { FacilityVerificationModal } from "@/components/counsel/FacilityVerificationModal";
 import { CenterLocatorModal } from "@/components/counsel/CenterLocatorModal";
 import { useIndicVoice } from "@/utils/useIndicVoice";
+import { useLanguageVoice, type SupportedLanguage } from "@/context/LanguageVoiceContext";
+import { DYADIC_DIALOGUES } from "@/data/dialogueScripts";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function Equalizer() {
   return (
@@ -60,7 +63,21 @@ export function AiArbiterCard({
   const [analysisStep, setAnalysisStep] = useState(0);
   const [isFacilityModalOpen, setIsFacilityModalOpen] = useState(false);
   const [isLocatorOpen, setIsLocatorOpen] = useState(false);
-  const { speak, stop, isSpeaking } = useIndicVoice();
+  const { speak, stop, isSpeaking, currentSpeakingPersona } = useIndicVoice();
+  const { language } = useLanguageVoice();
+  const { t: ui } = useTranslation();
+  const c = ui.counsel;
+  const activeLang: SupportedLanguage =
+    (language in DYADIC_DIALOGUES ? language : (lang as SupportedLanguage)) || "hi";
+  const dialogue = DYADIC_DIALOGUES[activeLang] || DYADIC_DIALOGUES.hi;
+
+  const handlePlayArbiter = () => {
+    if (isSpeaking && currentSpeakingPersona === "arbiter") {
+      stop();
+    } else {
+      speak(text[lang] || dialogue.arbiterRebuttal, "arbiter", activeLang);
+    }
+  };
   const trade = MOCK_TRADES.find((item) => item.trade_id === tradeId)!;
   const metrics = trade.verified_metrics;
   const steps =
@@ -94,7 +111,7 @@ export function AiArbiterCard({
           <Award className="h-5 w-5" />
         </div>
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-          <h3 className="text-lg font-bold text-navy">MitraSkill Career Arbiter</h3>
+          <h3 className="text-lg font-bold text-navy">{c.arbiterTitle}</h3>
           {isGenerating && (
             <span
               className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700"
@@ -110,7 +127,7 @@ export function AiArbiterCard({
         </div>
         <span className="ml-auto flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950">
           <Award className="h-4 w-4" />{" "}
-          {lang === "hi" ? "डेमो डेटा · स्रोत जाँचें" : "Demo data · verify sources"}
+          <span>{c.verifiedAuditTag}</span>
         </span>
       </div>
 
@@ -206,39 +223,41 @@ export function AiArbiterCard({
       </AnimatePresence>
 
       <p lang={lang} className="mt-2 border-l-2 border-success pl-3 text-sm text-muted-foreground">
-        {trade.parent_reassurance_script[lang]}
+        {trade.parent_reassurance_script[lang] || c.arbiterReassurance}
       </p>
       <div className="mt-5 grid grid-cols-2 gap-3">
         <Metric
           icon={<TrendingUp className="h-4 w-4" />}
-          label="Starting Salary Range"
+          label={c.salaryCardTitle}
           value={`${money(metrics.salary_range_min)} – ${money(metrics.salary_range_max)} / month`}
-          note={`Source: ${metrics.audit_source}`}
+          note={`${c.salaryCardSource} · ${metrics.audit_source}`}
           verified
         />
         <Metric
           icon={<Users className="h-4 w-4" />}
-          label="Verified Campus Placement"
+          label={c.placementCardTitle}
           value={`${metrics.placement_rate_percentage}%`}
-          note={`Top Recruiters: ${metrics.top_employers.slice(0, 2).join(", ")}`}
+          note={`${c.placementCardRecruiters}: ${metrics.top_employers.slice(0, 2).join(", ")}`}
           verified
         />
       </div>
       <button
-        onClick={() => (isSpeaking ? stop() : speak(text[lang], lang))}
+        onClick={handlePlayArbiter}
         disabled={isGenerating}
-        className="mt-5 flex items-center gap-2 rounded-full border bg-background px-4 py-2 font-medium text-navy"
-        aria-pressed={isSpeaking}
+        className={`mt-5 flex items-center gap-2 rounded-full border px-4 py-2 font-medium transition-all cursor-pointer ${
+          isSpeaking && currentSpeakingPersona === "arbiter"
+            ? "border-primary bg-primary/10 text-primary shadow-sm ring-2 ring-primary/20"
+            : "border-border bg-background text-navy hover:bg-accent/40"
+        }`}
+        aria-pressed={isSpeaking && currentSpeakingPersona === "arbiter"}
       >
         <Volume2 className="h-5 w-5 text-primary" />{" "}
-        {isSpeaking
+        {isSpeaking && currentSpeakingPersona === "arbiter"
           ? lang === "hi"
-            ? "आवाज़ चल रही है · रोकें"
-            : "Speaking · stop"
-          : lang === "hi"
-            ? "हिंदी में सुनें"
-            : "Listen to arbiter response"}{" "}
-        {isSpeaking && <Equalizer />}
+            ? "आर्बिटर बोल रहा है · रोकें"
+            : "Arbiter Speaking · stop"
+          : `🔊 ${c.audioBtn}`}{" "}
+        {isSpeaking && currentSpeakingPersona === "arbiter" && <Equalizer />}
       </button>
       <div className="mt-5 flex flex-wrap gap-2">
         <button
@@ -248,7 +267,7 @@ export function AiArbiterCard({
           className="flex items-center gap-2 rounded-xl border border-emerald-700/35 bg-emerald-50 px-4 py-2 font-semibold text-emerald-950 transition hover:border-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Building2 className="h-4 w-4 text-emerald-800" />
-          {lang === "hi" ? "केंद्र व सुरक्षा (नमूना)" : "Center & Safety (sample)"}
+          {c.facilityBtn}
         </button>
         <button
           type="button"
@@ -257,7 +276,7 @@ export function AiArbiterCard({
           className="flex items-center gap-2 rounded-xl border border-teal-700/30 bg-teal-50 px-4 py-2 font-semibold text-teal-950 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-teal-300/30 dark:bg-teal-950/40 dark:text-teal-100 dark:hover:bg-teal-900/60"
         >
           <MapPin className="h-4 w-4" />{" "}
-          {lang === "hi" ? "नज़दीकी ITI व सीटें" : "Nearby ITIs & seats"}
+          {c.seatsBtn}
         </button>
         <button
           onClick={onEscalate}
@@ -276,7 +295,7 @@ export function AiArbiterCard({
           tabIndex={isGenerating ? -1 : undefined}
           className="flex items-center gap-2 rounded-xl bg-[#E87722] px-4 py-2 font-medium text-white hover:bg-[#d0681a]"
         >
-          <GraduationCap className="h-5 w-5" /> View Degree Mobility (NCrF Ladder){" "}
+          <GraduationCap className="h-5 w-5" /> {c.mobilityBtn}{" "}
           <ArrowRight className="h-4 w-4" />
         </Link>
         <button
@@ -284,14 +303,14 @@ export function AiArbiterCard({
           disabled={isGenerating}
           className="flex items-center gap-2 rounded-xl border-2 border-success px-4 py-2 font-medium text-success"
         >
-          <BarChart3 className="h-5 w-5" /> Parent ROI Calculator (BA vs ITI)
+          <BarChart3 className="h-5 w-5" /> {c.roiBtn}
         </button>
         <button
           onClick={onAlumni}
           disabled={isGenerating}
           className="flex items-center gap-2 rounded-xl border-2 px-4 py-2 font-medium text-slate-600"
         >
-          <Clapperboard className="h-5 w-5" /> Career Reels (sample stories)
+          <Clapperboard className="h-5 w-5" /> {c.alumniBtn}
         </button>
       </div>
       <FacilityVerificationModal
