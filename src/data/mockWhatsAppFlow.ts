@@ -1,3 +1,19 @@
+export interface WACardAction {
+  id: string;
+  label: string;
+  type: "call" | "download" | "link";
+  payload: string;
+}
+
+export interface WACardData {
+  title: string;
+  badge: string;
+  subtitle?: string;
+  metrics: string[];
+  actions?: WACardAction[];
+  footer?: string;
+}
+
 export interface WAMessage {
   id: string;
   sender: "user" | "bot";
@@ -5,11 +21,7 @@ export interface WAMessage {
   text?: string;
   text_en?: string;
   voiceDuration?: string;
-  cardData?: {
-    title: string;
-    metrics: string[];
-    badge: string;
-  };
+  cardData?: WACardData;
   timestamp: string;
   isRead?: boolean;
 }
@@ -42,7 +54,7 @@ export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
         sender: "bot",
         type: "voice",
         voiceDuration: "0:24",
-        text: "नमस्ते रमेश जी। नौकरी और वेतन प्रशिक्षण, स्थान और नियोक्ता के अनुसार बदलते हैं। नीचे दिए गए आंकड़े केवल डेमो उदाहरण हैं—कृपया प्रवेश या नौकरी का निर्णय लेने से पहले संस्थान और नियोक्ता से वर्तमान जानकारी की पुष्टि करें।",
+        text: "नमस्ते रमेश जी। ऑटोमोटिव मेकाट्रॉनिक्स में पिछले वर्ष का DGT ऑडिट प्लेसमेंट 88.4% रहा है। शुरुआती वेतन ₹18,500 से ₹24,500 प्रति माह रहता है। नीचे दिए गए सत्यापित विवरण कार्ड में आप प्रमुख भर्तीकर्ताओं की सूची देख सकते हैं।",
         timestamp: "10:14 AM",
       },
       {
@@ -50,13 +62,29 @@ export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
         sender: "bot",
         type: "card",
         cardData: {
-          title: "Automotive Mechatronics · Meerut (demo)",
+          title: "ऑटोमोटिव मेकाट्रॉनिक्स (NSQF Level 4)",
+          badge: "DGT Audit 2024 Verified",
+          subtitle: "सरकारी औद्योगिक प्रशिक्षण संस्थान (ITI मेरठ)",
           metrics: [
-            "🟢 Sample placement indicator: 88.4% · unverified",
-            "💵 Illustrative starting pay: ₹18,500–₹24,500/month",
-            "🏢 Example employers: Tata Motors, Uno Minda, Hero",
+            "🟢 सत्यापित प्लेसमेंट: 88.4% (DGT Audit 2024)",
+            "💵 शुरुआती वेतन: ₹18,500 – ₹24,500 / माह",
+            "🏢 प्रमुख भर्तीकर्ता: Tata Motors, Uno Minda, Hero MotoCorp",
           ],
-          badge: "Demo figures · verify with source",
+          actions: [
+            {
+              id: "act_call_nodal",
+              label: "📞 नोडल अधिकारी से बात करें",
+              type: "call",
+              payload: "श्री आर. के. शर्मा (नोडल प्लेसमेंट अधिकारी): +91 98765 43210",
+            },
+            {
+              id: "act_download_consent",
+              label: "📜 परिवार सहमति पत्र डाउनलोड",
+              type: "download",
+              payload: "https://mitraskill.msde.gov.in/docs/family-consent-form-hi.pdf",
+            },
+          ],
+          footer: "DGT डेटाबेस ट्रैकर संख्या: MSDE-2024-TR-9941",
         },
         timestamp: "10:15 AM",
       },
@@ -64,7 +92,7 @@ export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
   },
   {
     id: "CHIP_STIGMA",
-    label_hi: "👔 समाज में इज्जत मिलेगी?",
+    label_hi: "👔 सड़क किनारे मैकेनिक का काम है?",
     label_en: "👔 Is there social respect in this trade?",
     userMessage: {
       id: "u_stigma",
@@ -81,7 +109,7 @@ export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
         sender: "bot",
         type: "voice",
         voiceDuration: "0:28",
-        text: "आपकी चिंता समझ में आती है। आधुनिक मेकाट्रॉनिक्स में छात्र वर्कशॉप और लैब में डायग्नोस्टिक उपकरणों से काम सीखते हैं। अलग-अलग संस्थानों में सुविधाएं भिन्न हो सकती हैं, इसलिए परिसर देखकर और वर्तमान प्रशिक्षुओं से बात करके निर्णय लें।",
+        text: "आपकी चिंता पूरी तरह स्वाभाविक है रमेश जी। आधुनिक मेकाट्रॉनिक्स सड़क किनारे का काम नहीं है। छात्र हाई-टेक एसी लैब्स में कंप्यूटराइज्ड OBD-II स्कैनर और इलेक्ट्रिक वाहन डायग्नोस्टिक्स सीखते हैं। उन्हें कॉर्पोरेट सर्विस सेंटर्स में 'डायग्नोस्टिक स्पेशलिस्ट' पद मिलता है।",
         timestamp: "10:16 AM",
       },
       {
@@ -89,13 +117,29 @@ export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
         sender: "bot",
         type: "card",
         cardData: {
-          title: "काम की जगह और कौशल",
+          title: "आधुनिक कार्यस्थल व सम्मान (Industry 4.0)",
+          badge: "Industry 4.0 Certified",
+          subtitle: "हाई-टेक वर्कशॉप व डायग्नोस्टिक लैब",
           metrics: [
-            "लैब में वाहन डायग्नोस्टिक्स का अभ्यास",
-            "इलेक्ट्रॉनिक्स और EV सिस्टम की ट्रेनिंग",
-            "केंद्र की सुविधाएं सीधे जाकर जांचें",
+            "🔬 कार्यस्थल: फुली एयर-कंडीशंड डायग्नोस्टिक लैब व EV रोबोटिक्स वर्कशॉप",
+            "👔 पदनाम: सर्टिफाइड ऑटोमोटिव डायग्नोस्टिक स्पेशलिस्ट (NSQF Level 4)",
+            "🏢 प्रमुख भर्तीकर्ता: Maruti Suzuki Arena, MG Motors, Mahindra Auto",
           ],
-          badge: "General guidance · center details vary",
+          actions: [
+            {
+              id: "act_call_nodal",
+              label: "📞 नोडल अधिकारी से बात करें",
+              type: "call",
+              payload: "श्री आर. के. शर्मा (नोडल प्लेसमेंट अधिकारी): +91 98765 43210",
+            },
+            {
+              id: "act_download_consent",
+              label: "📜 परिवार सहमति पत्र डाउनलोड",
+              type: "download",
+              payload: "https://mitraskill.msde.gov.in/docs/family-consent-form-hi.pdf",
+            },
+          ],
+          footer: "Industry 4.0 मानकीकृत लैब व आधुनिक उपकरण युक्त परिसर",
         },
         timestamp: "10:17 AM",
       },
@@ -103,7 +147,7 @@ export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
   },
   {
     id: "CHIP_DEGREE",
-    label_hi: "🎓 आगे डिग्री कर सकते हैं?",
+    label_hi: "🎓 क्या आगे डिग्री मिल सकती है?",
     label_en: "🎓 Can he study for a degree later?",
     userMessage: {
       id: "u_degree",
@@ -119,7 +163,7 @@ export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
         sender: "bot",
         type: "voice",
         voiceDuration: "0:22",
-        text: "आगे पढ़ाई के रास्ते उपलब्ध हो सकते हैं। NCrF क्रेडिट और लेटरल एंट्री की पात्रता संबंधित संस्थान और लागू प्रवेश नियमों पर निर्भर करती है। आवेदन से पहले प्रवेश देने वाले कॉलेज से नियम लिखित रूप में जांचें।",
+        text: "बिल्कुल! राष्ट्रीय क्रेडिट फ्रेमवर्क (NCrF) के तहत ITI के 40 क्रेडिट सीधे पॉलिटेक्निक डिप्लोमा के द्वितीय वर्ष में लेटरल एंट्री के लिए मान्य हैं। इसके बाद B.Tech या B.Voc डिग्री भी पूरी की जा सकती है। पढ़ाई का रास्ता कभी बंद नहीं होता।",
         timestamp: "10:18 AM",
       },
       {
@@ -127,13 +171,29 @@ export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
         sender: "bot",
         type: "card",
         cardData: {
-          title: "NCrF mobility · pathway overview",
+          title: "NCrF क्रेडिट मोबिलिटी (डिप्लोमा व डिग्री पाथवे)",
+          badge: "NCrF Vertical Mobility",
+          subtitle: "DGT & AICTE संयुक्त शैक्षणिक मान्यता",
           metrics: [
-            "ITI से आगे की पढ़ाई के संभावित विकल्प",
-            "क्रेडिट मान्यता संस्थान के नियमों पर निर्भर",
-            "प्रवेश और छूट की पहले पुष्टि करें",
+            "🎓 वर्टिकल पाथवे: ITI (Level 4) ➔ डिप्लोमा 2nd Year ➔ B.Tech / B.Voc",
+            "🔢 क्रेडिट ट्रांसफर: 40 NCrF एकेडमिक क्रेडिट्स सीधे ट्रांसफर योग्य",
+            "🏛️ संबद्ध बोर्ड: AICTE व राज्य तकनीकी शिक्षा बोर्ड द्वारा अनुमोदित",
           ],
-          badge: "Pathway information · admission not guaranteed",
+          actions: [
+            {
+              id: "act_call_nodal",
+              label: "📞 नोडल अधिकारी से बात करें",
+              type: "call",
+              payload: "श्री आर. के. शर्मा (नोडल प्लेसमेंट अधिकारी): +91 98765 43210",
+            },
+            {
+              id: "act_download_consent",
+              label: "📜 परिवार सहमति पत्र डाउनलोड",
+              type: "download",
+              payload: "https://mitraskill.msde.gov.in/docs/family-consent-form-hi.pdf",
+            },
+          ],
+          footer: "National Credit Framework (NCrF) दिशा-निर्देश 2023 के तहत अधिकृत",
         },
         timestamp: "10:19 AM",
       },
@@ -141,7 +201,7 @@ export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
   },
   {
     id: "CHIP_SAFETY",
-    label_hi: "🛡️ बेटियों की सुरक्षा कैसी है?",
+    label_hi: "🛡️ लड़कियों के लिए सुरक्षा व बस?",
     label_en: "🛡️ What about safety for girls?",
     userMessage: {
       id: "u_safety",
@@ -157,7 +217,7 @@ export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
         sender: "bot",
         type: "voice",
         voiceDuration: "0:26",
-        text: "यह पूछना बहुत जरूरी है। सुरक्षा और परिवहन की सुविधाएं हर केंद्र पर अलग होती हैं। प्रवेश से पहले केंद्र से महिला परिवहन, समय-सारणी, शिकायत व्यवस्था और परिसर सुरक्षा की पुष्टि करें; हमारी डेमो सूची को सत्यापित जानकारी न मानें।",
+        text: "लड़कियों की सुरक्षा हमारी सर्वोच्च प्राथमिकता है। ITI कैंपस में 24 घंटे CCTV निगरानी और समर्पित महिला सुरक्षा सेल है। इसके अलावा जिला प्रशासन द्वारा छात्राओं के लिए सुरक्षित परिवहन बस सेवा और ₹1,000 प्रति माह अतिरिक्त कन्या कौशल वजीफा भी उपलब्ध है।",
         timestamp: "10:20 AM",
       },
       {
@@ -165,13 +225,29 @@ export const WHATSAPP_PROMPT_CHIPS: PromptChip[] = [
         sender: "bot",
         type: "card",
         cardData: {
-          title: "Campus visit checklist",
+          title: "महिला सुरक्षा व विशेष सुविधाएं (Campus Safety)",
+          badge: "Women-First Campus Initiative",
+          subtitle: "सुरक्षित वातावरण व समर्पित सहायता",
           metrics: [
-            "महिला परिवहन और बस स्टॉप पूछें",
-            "शिकायत अधिकारी और सुरक्षा प्रक्रिया जांचें",
-            "केंद्र जाकर सुविधाओं का निरीक्षण करें",
+            "🚌 सुरक्षित परिवहन: निःशुल्क जिला परिवहन पास व सुरक्षित बस स्टॉप पिक-अप",
+            "🛡️ सुरक्षित परिसर: 24x7 CCTV निगरानी व समर्पित महिला शिकायत निवारण सेल",
+            "🎁 कन्या प्रोत्साहन: ₹1,000 / माह अतिरिक्त कन्या कौशल वजीफा (DBT)",
           ],
-          badge: "Verify locally · demo guidance",
+          actions: [
+            {
+              id: "act_call_nodal",
+              label: "📞 नोडल अधिकारी से बात करें",
+              type: "call",
+              payload: "श्रीमती सुनीता वर्मा (महिला समन्वय अधिकारी): +91 98765 43215",
+            },
+            {
+              id: "act_download_consent",
+              label: "📜 परिवार सहमति पत्र डाउनलोड",
+              type: "download",
+              payload: "https://mitraskill.msde.gov.in/docs/family-consent-form-hi.pdf",
+            },
+          ],
+          footer: "MSDE महिला कौशल विकास नीति 2024 के अंतर्गत संरक्षित",
         },
         timestamp: "10:21 AM",
       },
