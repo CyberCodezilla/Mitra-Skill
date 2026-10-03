@@ -62,7 +62,8 @@ function Onboarding() {
   const c = ui.home;
   const [aptitudeModalOpen, setAptitudeModalOpen] = useState(false);
   const heroTitle = c.headline;
-  const [heroInitial, ...heroRest] = Array.from(heroTitle);
+  const isEnglish = language === "en" || (!language && lang === "en");
+  const [heroInitial, ...heroRest] = isEnglish ? Array.from(heroTitle) : ["", heroTitle];
 
   // Fallback to active language or app lang
   const activeLang: SupportedLanguage = (language in DYADIC_DIALOGUES ? language : (lang as SupportedLanguage)) || "hi";
@@ -100,11 +101,17 @@ function Onboarding() {
             <ShieldCheck className="h-4 w-4 text-success" /> {c.badge}
           </span>
           <h1 className="font-hero-title mx-auto mt-5 max-w-4xl text-4xl font-bold text-navy sm:text-6xl">
-            <span className="hero-initial" aria-hidden="true">
-              {heroInitial}
-            </span>
-            <span className="sr-only">{heroInitial}</span>
-            {heroRest.join("")}
+            {isEnglish ? (
+              <>
+                <span className="hero-initial" aria-hidden="true">
+                  {heroInitial}
+                </span>
+                <span className="sr-only">{heroInitial}</span>
+                {heroRest.join("")}
+              </>
+            ) : (
+              heroTitle
+            )}
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">{c.subheadline}</p>
 
