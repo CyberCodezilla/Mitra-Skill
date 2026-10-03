@@ -1,13 +1,14 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { GraduationCap, Users } from "lucide-react";
-import type { Bi, ChatItem } from "@/data/dialogueScripts";
+import type { Bi, ChatItem, Topic } from "@/data/dialogueScripts";
 import type { Lang } from "@/lib/app-context";
 import { useLanguageVoice, type SupportedLanguage } from "@/context/LanguageVoiceContext";
+import type { ArbiterTopic } from "@/data/arbiterEvidence";
 import { AiArbiterCard } from "./AiArbiterCard";
 
 type Activity =
-  | { id: string; kind: "student" | "parent"; tradeId?: never; text: Bi; thinkingMs: number }
-  | { id: string; kind: "arbiter"; tradeId: string; text: Bi; thinkingMs: number }
+  | { id: string; kind: "student" | "parent"; tradeId?: never; text: Bi; thinkingMs: number; topic?: Topic | undefined }
+  | { id: string; kind: "arbiter"; tradeId: string; text: Bi; thinkingMs: number; topic?: ArbiterTopic | undefined }
   | null;
 
 type Props = {
@@ -71,6 +72,7 @@ export function DyadicChatFeed({
                 <AiArbiterCard
                   tradeId={message.tradeId}
                   text={message.text}
+                  topic={message.topic}
                   lang={activeLang}
                   onRoi={onRoi}
                   onAlumni={onAlumni}
@@ -94,6 +96,7 @@ export function DyadicChatFeed({
               <AiArbiterCard
                 tradeId={activity.tradeId}
                 text={activity.text}
+                topic={activity.topic}
                 isGenerating
                 lang={activeLang}
                 onRoi={onRoi}

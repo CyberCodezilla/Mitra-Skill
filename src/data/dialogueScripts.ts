@@ -1,14 +1,16 @@
 import type { SupportedLanguage } from "../context/LanguageVoiceContext";
 
+import type { ArbiterTopic } from "./arbiterEvidence";
+
 export type { SupportedLanguage };
 
 export type Bi = Record<SupportedLanguage, string>;
 export type Topic = "salary" | "stigma" | "safety";
 
 export type ChatItem =
-  | { id: string; kind: "student"; text: Bi }
-  | { id: string; kind: "parent"; text: Bi }
-  | { id: string; kind: "arbiter"; tradeId: string; text: Bi };
+  | { id: string; kind: "student"; text: Bi; topic?: Topic | undefined }
+  | { id: string; kind: "parent"; text: Bi; topic?: Topic | undefined }
+  | { id: string; kind: "arbiter"; tradeId: string; text: Bi; topic?: ArbiterTopic | undefined };
 
 type TradeScript = {
   opening: { student: Bi; parent: Bi; arbiter: Bi };

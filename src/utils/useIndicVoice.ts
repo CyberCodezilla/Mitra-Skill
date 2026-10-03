@@ -11,6 +11,48 @@ const VALID_PERSONA_IDS: PersonaId[] = [
 
 const VALID_LANGS: SupportedLanguage[] = ["en", "hi", "mr", "bn", "ta"];
 
+// ─── Indic-aware sentence splitter ────────────────────────────────
+// Splits on `.` `।` `?` `!` `;` and `,` (only when a clause exceeds
+// ~80 chars). This prevents any single utterance from crossing Chrome's
+// ~15-second garbage-collection boundary.
+const SENTENCE_DELIMITERS = /(?<=[।\.!\?;])\s+/;
+const CLAUSE_COMMA_SPLIT = /(?<=[,，،])\s+/;
+const MAX_CHUNK_CHARS = 120; // if a sentence still exceeds this, split on commas
+
+function splitIntoChunks(text: string): string[] {
+  if (!text || text.trim().length === 0) return [];
+
+  // Phase 1: split on sentence boundaries
+  const rawSentences = text.split(SENTENCE_DELIMITERS).filter((s) => s.trim().length > 0);
+
+  const chunks: string[] = [];
+  for (const sentence of rawSentences) {
+    if (sentence.length <= MAX_CHUNK_CHARS) {
+      chunks.push(sentence.trim());
+    } else {
+      // Phase 2: sentence is too long → split on commas
+      const subParts = sentence.split(CLAUSE_COMMA_SPLIT).filter((s) => s.trim().length > 0);
+      let buffer = "";
+      for (const part of subParts) {
+        if (buffer.length + part.length > MAX_CHUNK_CHARS && buffer.length > 0) {
+          chunks.push(buffer.trim());
+          buffer = part;
+        } else {
+          buffer += (buffer ? ", " : "") + part;
+        }
+      }
+      if (buffer.trim()) chunks.push(buffer.trim());
+    }
+  }
+
+  return chunks.length > 0 ? chunks : [text.trim()];
+}
+
+// ─── Keepalive heartbeat ──────────────────────────────────────────
+// Chrome's speechSynthesis silently kills utterances after ~15 sec of
+// continuous playback.  A periodic pause()/resume() resets the timer.
+const KEEPALIVE_INTERVAL_MS = 10_000;
+
 export interface SpeakFunction {
   (text: string, persona?: PersonaId, customLang?: SupportedLanguage, onEnd?: () => void): void;
   (text: string, lang?: SupportedLanguage, onEnd?: () => void): void;
@@ -21,9 +63,26 @@ export function useIndicVoice() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentSpeakingPersona, setCurrentSpeakingPersona] = useState<PersonaId | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  // Refs for chunk queue management
+  const chunkQueueRef = useRef<string[]>([]);
+  const chunkIndexRef = useRef(0);
+  const isPlayingRef = useRef(false);
+  const onEndCallbackRef = useRef<(() => void) | null>(null);
+  const keepaliveTimerRef = useRef<number | null>(null);
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  // Store resolved config so chunk playback can reuse it
+  const resolvedConfigRef = useRef<{
+    persona: PersonaId;
+    lang: SupportedLanguage;
+    targetGender: "male" | "female";
+    pitch: number;
+    rate: number;
+  } | null>(null);
+
   const isSupported = typeof window !== "undefined" && "speechSynthesis" in window;
 
+  // ─── Voice loading ──────────────────────────────────────────────
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
@@ -47,9 +106,31 @@ export function useIndicVoice() {
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
+      clearKeepalive();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ─── Keepalive helpers ──────────────────────────────────────────
+  const startKeepalive = useCallback(() => {
+    clearKeepalive();
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    keepaliveTimerRef.current = window.setInterval(() => {
+      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, KEEPALIVE_INTERVAL_MS);
+  }, []);
+
+  function clearKeepalive() {
+    if (keepaliveTimerRef.current !== null) {
+      window.clearInterval(keepaliveTimerRef.current);
+      keepaliveTimerRef.current = null;
+    }
+  }
+
+  // ─── Voice selection ────────────────────────────────────────────
   const selectBestVoice = useCallback(
     (lang: SupportedLanguage, targetGender: "male" | "female"): SpeechSynthesisVoice | null => {
       if (voices.length === 0) return null;
@@ -106,6 +187,81 @@ export function useIndicVoice() {
     [voices],
   );
 
+  // ─── Play a single chunk ───────────────────────────────────────
+  const playNextChunk = useCallback(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    const queue = chunkQueueRef.current;
+    const idx = chunkIndexRef.current;
+
+    // All chunks finished
+    if (idx >= queue.length) {
+      isPlayingRef.current = false;
+      clearKeepalive();
+      setIsSpeaking(false);
+      setCurrentSpeakingPersona(null);
+      if (onEndCallbackRef.current) {
+        onEndCallbackRef.current();
+        onEndCallbackRef.current = null;
+      }
+      return;
+    }
+
+    const config = resolvedConfigRef.current;
+    if (!config) return;
+
+    const chunkText = queue[idx]!;
+    const utterance = new SpeechSynthesisUtterance(chunkText);
+    currentUtteranceRef.current = utterance;
+
+    const matchedVoice = selectBestVoice(config.lang, config.targetGender);
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+      utterance.lang = matchedVoice.lang;
+    } else {
+      const localeFallback: Record<SupportedLanguage, string> = {
+        en: "en-IN",
+        hi: "hi-IN",
+        mr: "mr-IN",
+        bn: "bn-IN",
+        ta: "ta-IN",
+      };
+      utterance.lang = localeFallback[config.lang];
+    }
+
+    // Apply demographic-calibrated DSP pitch and tempo
+    utterance.pitch = config.pitch;
+    utterance.rate = config.rate;
+
+    let finished = false;
+    const handleChunkFinish = () => {
+      if (finished) return;
+      finished = true;
+      // Advance to next chunk
+      chunkIndexRef.current += 1;
+      // Small inter-chunk pause for natural cadence
+      window.setTimeout(() => {
+        if (isPlayingRef.current) {
+          playNextChunk();
+        }
+      }, 80);
+    };
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      setCurrentSpeakingPersona(config.persona);
+    };
+    utterance.onend = handleChunkFinish;
+    utterance.onerror = (event) => {
+      // "interrupted" is expected when stop() is called — don't cascade
+      if (event.error === "interrupted" || event.error === "canceled") return;
+      handleChunkFinish();
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }, [selectBestVoice]);
+
+  // ─── Public speak() ─────────────────────────────────────────────
   const speak: SpeakFunction = useCallback(
     (
       text: string,
@@ -123,7 +279,10 @@ export function useIndicVoice() {
         return;
       }
 
+      // Cancel any in-progress playback
       window.speechSynthesis.cancel();
+      isPlayingRef.current = false;
+      clearKeepalive();
 
       // Backward-compatibility: if second argument is a language code (e.g., "hi", "en"), route it as lang
       let resolvedPersona: PersonaId = "arbiter";
@@ -141,51 +300,40 @@ export function useIndicVoice() {
       const profile = PERSONA_PROFILES[resolvedPersona];
       const targetGender = resolvedPersona === "arbiter" ? gender : profile.preferredGender;
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      currentUtteranceRef.current = utterance;
-
-      const matchedVoice = selectBestVoice(resolvedLang, targetGender);
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
-        utterance.lang = matchedVoice.lang;
-      } else {
-        const localeFallback: Record<SupportedLanguage, string> = {
-          en: "en-IN",
-          hi: "hi-IN",
-          mr: "mr-IN",
-          bn: "bn-IN",
-          ta: "ta-IN",
-        };
-        utterance.lang = localeFallback[resolvedLang];
-      }
-
-      // Apply demographic-calibrated DSP pitch and tempo
-      utterance.pitch = profile.pitch;
-      utterance.rate = profile.rate;
-
-      let finished = false;
-      const handleFinish = () => {
-        if (finished) return;
-        finished = true;
-        setIsSpeaking(false);
-        setCurrentSpeakingPersona(null);
-        if (onEnd) onEnd();
+      // Store config for chunk playback
+      resolvedConfigRef.current = {
+        persona: resolvedPersona,
+        lang: resolvedLang,
+        targetGender,
+        pitch: profile.pitch,
+        rate: profile.rate,
       };
 
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-        setCurrentSpeakingPersona(resolvedPersona);
-      };
-      utterance.onend = handleFinish;
-      utterance.onerror = handleFinish;
+      // Split text into safe chunks
+      const chunks = splitIntoChunks(text);
+      chunkQueueRef.current = chunks;
+      chunkIndexRef.current = 0;
+      onEndCallbackRef.current = onEnd || null;
+      isPlayingRef.current = true;
 
-      window.speechSynthesis.speak(utterance);
+      // Start keepalive heartbeat
+      startKeepalive();
+
+      // Begin sequential playback
+      playNextChunk();
     },
-    [language, gender, selectBestVoice],
+    [language, gender, startKeepalive, playNextChunk],
   );
 
+  // ─── Public stop() ──────────────────────────────────────────────
   const stop = useCallback(() => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      // Halt queue before cancelling to prevent chunk cascade
+      isPlayingRef.current = false;
+      chunkQueueRef.current = [];
+      chunkIndexRef.current = 0;
+      onEndCallbackRef.current = null;
+      clearKeepalive();
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
       setCurrentSpeakingPersona(null);

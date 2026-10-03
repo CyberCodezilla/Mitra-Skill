@@ -13,6 +13,7 @@ import { ConsensusMathInspector } from "@/components/counsel/ConsensusMathInspec
 import { CenterLocatorModal } from "@/components/counsel/CenterLocatorModal";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useLanguageVoice, type SupportedLanguage } from "@/context/LanguageVoiceContext";
+import type { ArbiterTopic } from "@/data/arbiterEvidence";
 
 export const Route = createFileRoute("/counsel")({
   head: () => ({ meta: [{ title: "Dyadic Dialogue | MitraSkill Family Counselling" }] }),
@@ -20,13 +21,13 @@ export const Route = createFileRoute("/counsel")({
 });
 
 type Activity =
-  | { id: string; kind: "student" | "parent"; text: Bi; thinkingMs: number }
-  | { id: string; kind: "arbiter"; tradeId: string; text: Bi; thinkingMs: number }
+  | { id: string; kind: "student" | "parent"; text: Bi; thinkingMs: number; topic?: Topic | undefined }
+  | { id: string; kind: "arbiter"; tradeId: string; text: Bi; thinkingMs: number; topic?: ArbiterTopic | undefined }
   | null;
 type DialogueEvent =
-  | { kind: "student"; text: Bi }
-  | { kind: "parent"; text: Bi }
-  | { kind: "arbiter"; tradeId: string; text: Bi };
+  | { kind: "student"; text: Bi; topic?: Topic | undefined }
+  | { kind: "parent"; text: Bi; topic?: Topic | undefined }
+  | { kind: "arbiter"; tradeId: string; text: Bi; topic?: ArbiterTopic | undefined };
 
 let messageSequence = 0;
 const messageId = () => `counsel-${++messageSequence}`;
@@ -37,7 +38,7 @@ const opening = (tradeId: string): DialogueEvent[] => {
   return [
     { kind: "student", text: script.opening.student },
     { kind: "parent", text: script.opening.parent },
-    { kind: "arbiter", tradeId, text: script.opening.arbiter },
+    { kind: "arbiter", tradeId, text: script.opening.arbiter, topic: "opening" },
   ];
 };
 
@@ -144,8 +145,8 @@ function Counsel() {
       if (thisRun !== runId.current) return;
       const item: ChatItem =
         event.kind === "arbiter"
-          ? { id, kind: "arbiter", tradeId: event.tradeId, text: event.text }
-          : { id, kind: event.kind, text: event.text };
+          ? { id, kind: "arbiter", tradeId: event.tradeId, text: event.text, topic: event.topic }
+          : { id, kind: event.kind, text: event.text, topic: event.topic };
       setItems((current) => [...current, item]);
       setActivity(null);
       await delay(620 + Math.random() * 360);
@@ -179,18 +180,20 @@ function Counsel() {
   const simulate = (who: "student" | "parent", topic?: Topic) => {
     if (busy) return;
     const script = SCRIPTS[tradeId]!;
+    const activeTopic: Topic = topic ?? (who === "student" ? "salary" : script.parentDefault);
     const events: DialogueEvent[] =
       who === "student"
         ? [
-            { kind: "student", text: script.studentFollowUp },
-            { kind: "arbiter", tradeId, text: script.objections.salary.arbiter },
+            { kind: "student", text: script.studentFollowUp, topic: "salary" },
+            { kind: "arbiter", tradeId, text: script.objections.salary.arbiter, topic: "salary" },
           ]
         : [
-            { kind: "parent", text: script.objections[topic ?? script.parentDefault].parent },
+            { kind: "parent", text: script.objections[activeTopic].parent, topic: activeTopic },
             {
               kind: "arbiter",
               tradeId,
-              text: script.objections[topic ?? script.parentDefault].arbiter,
+              text: script.objections[activeTopic].arbiter,
+              topic: activeTopic,
             },
           ];
     setConverged(true);

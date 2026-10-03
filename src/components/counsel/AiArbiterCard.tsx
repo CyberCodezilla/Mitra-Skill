@@ -1,18 +1,20 @@
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Award,
   ArrowRight,
   BarChart3,
   Building2,
   Check,
+  CheckCircle2,
   Clapperboard,
   Database,
   GraduationCap,
   HeartHandshake,
   MapPin,
   Scale,
+  ShieldCheck,
   TrendingUp,
   Users,
   Volume2,
@@ -26,6 +28,13 @@ import { useIndicVoice } from "@/utils/useIndicVoice";
 import { useLanguageVoice, type SupportedLanguage } from "@/context/LanguageVoiceContext";
 import { DYADIC_DIALOGUES } from "@/data/dialogueScripts";
 import { useTranslation } from "@/hooks/useTranslation";
+import {
+  ARBITER_EVIDENCE,
+  EVIDENCE_LOADING_TEXT,
+  type ArbiterTopic,
+  type EvidenceMetricItem,
+  type TopicEvidence,
+} from "@/data/arbiterEvidence";
 
 export function Equalizer() {
   return (
@@ -126,6 +135,7 @@ const STATUS_TEXTS: Record<
 export function AiArbiterCard({
   tradeId,
   text,
+  topic = "opening",
   isGenerating = false,
   lang,
   onRoi,
@@ -134,6 +144,7 @@ export function AiArbiterCard({
 }: {
   tradeId: string;
   text: Bi;
+  topic?: ArbiterTopic | undefined;
   isGenerating?: boolean;
   lang: SupportedLanguage | Lang;
   onRoi: () => void;
@@ -141,6 +152,7 @@ export function AiArbiterCard({
   onEscalate: () => void;
 }) {
   const [analysisStep, setAnalysisStep] = useState(0);
+  const [isEvidenceLoading, setIsEvidenceLoading] = useState(true);
   const [isFacilityModalOpen, setIsFacilityModalOpen] = useState(false);
   const [isLocatorOpen, setIsLocatorOpen] = useState(false);
   const { speak, stop, isSpeaking, currentSpeakingPersona } = useIndicVoice();
@@ -156,14 +168,20 @@ export function AiArbiterCard({
   const steps = ANALYSIS_STEPS[activeLang] || ANALYSIS_STEPS.hi;
 
   const trade = MOCK_TRADES.find((item) => item.trade_id === tradeId)!;
-  const metrics = trade.verified_metrics;
+
+  // Resolve active topic evidence
+  const activeTopic: ArbiterTopic = topic || "opening";
+  const defaultEvidence = ARBITER_EVIDENCE["AUTO_MECH_01"]!;
+  const tradeEvidence = ARBITER_EVIDENCE[tradeId] ?? defaultEvidence;
+  const topicData: TopicEvidence = tradeEvidence[activeTopic] ?? tradeEvidence["opening"]!;
 
   const arbiterText =
     text[activeLang] || text.hi || text.en || dialogue.arbiterRebuttal;
   const reassuranceText =
+    topicData.reassurance[activeLang] ||
+    topicData.reassurance.hi ||
+    topicData.reassurance.en ||
     trade.parent_reassurance_script?.[activeLang] ||
-    trade.parent_reassurance_script?.hi ||
-    trade.parent_reassurance_script?.en ||
     c.arbiterReassurance;
 
   const handlePlayArbiter = () => {
@@ -181,7 +199,31 @@ export function AiArbiterCard({
     return () => window.clearInterval(timer);
   }, [isGenerating]);
 
-  const money = (number: number) => `₹${number.toLocaleString("en-IN")}`;
+  // Loading animation management for the green box evidence section
+  useEffect(() => {
+    setIsEvidenceLoading(true);
+    const timer = window.setTimeout(() => {
+      setIsEvidenceLoading(false);
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [topic, tradeId]);
+
+  const prevGenerating = useRef(isGenerating);
+  useEffect(() => {
+    let timer: number | undefined;
+    if (prevGenerating.current && !isGenerating) {
+      setIsEvidenceLoading(true);
+      timer = window.setTimeout(() => {
+        setIsEvidenceLoading(false);
+      }, 700);
+    }
+    prevGenerating.current = isGenerating;
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [isGenerating]);
+
+  const showEvidenceLoading = isEvidenceLoading || isGenerating;
 
   return (
     <article className="rounded-2xl border-2 border-indigo-100 bg-white p-5 shadow-card sm:p-6">
@@ -299,25 +341,105 @@ export function AiArbiterCard({
         )}
       </AnimatePresence>
 
-      <p lang={activeLang} className="mt-3 border-l-2 border-success pl-3 text-xs sm:text-sm leading-relaxed text-muted-foreground break-words">
-        {reassuranceText}
-      </p>
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <Metric
-          icon={<TrendingUp className="h-4 w-4" />}
-          label={c.salaryCardTitle}
-          value={`${money(metrics.salary_range_min)} – ${money(metrics.salary_range_max)} / month`}
-          note={`${c.salaryCardSource} · ${metrics.audit_source}`}
-          verified
-        />
-        <Metric
-          icon={<Users className="h-4 w-4" />}
-          label={c.placementCardTitle}
-          value={`${metrics.placement_rate_percentage}%`}
-          note={`${c.placementCardRecruiters}: ${metrics.top_employers.slice(0, 2).join(", ")}`}
-          verified
-        />
-      </div>
+      <AnimatePresence mode="wait">
+        {showEvidenceLoading ? (
+          <motion.div
+            key={`evidence-loading-${activeTopic}`}
+            initial={{ opacity: 0.6 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mt-4 space-y-3"
+            role="status"
+            aria-label="Verifying audited evidence"
+          >
+            {/* Live Telemetry Ping Banner */}
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-300/60 bg-gradient-to-r from-emerald-50/90 via-teal-50/60 to-emerald-50/90 px-3 py-2 text-xs font-semibold text-emerald-900 dark:border-emerald-800/50 dark:from-emerald-950/50 dark:via-teal-950/30 dark:to-emerald-950/50 dark:text-emerald-200">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+                </span>
+                <span className="truncate">
+                  {EVIDENCE_LOADING_TEXT[activeLang] || EVIDENCE_LOADING_TEXT.hi}
+                </span>
+              </div>
+              <span className="flex h-3.5 items-end gap-0.5 shrink-0" aria-hidden="true">
+                <span className="h-full w-1 rounded-full bg-emerald-600 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="h-full w-1 rounded-full bg-emerald-600 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="h-full w-1 rounded-full bg-emerald-600 animate-bounce" style={{ animationDelay: "300ms" }} />
+              </span>
+            </div>
+
+            {/* Reassurance skeleton */}
+            <div className="border-l-2 border-emerald-400/50 pl-3 py-1 space-y-1.5">
+              <div className="h-3.5 w-11/12 rounded bg-emerald-100/70 dark:bg-emerald-950/60 animate-pulse" />
+              <div className="h-3.5 w-4/5 rounded bg-emerald-100/50 dark:bg-emerald-950/40 animate-pulse" />
+            </div>
+
+            {/* Metric skeletons */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="relative overflow-hidden rounded-xl border border-emerald-200/50 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/50 p-3 sm:p-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-5 w-5 rounded-full bg-emerald-200/80 dark:bg-emerald-800/60 animate-pulse" />
+                  <div className="h-3.5 w-24 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
+                </div>
+                <div className="mt-2.5 h-6 w-32 rounded bg-emerald-200/80 dark:bg-emerald-800/70 animate-pulse" />
+                <div className="mt-2 h-3 w-40 rounded bg-slate-200/70 dark:bg-slate-800/50 animate-pulse" />
+                <motion.span
+                  aria-hidden="true"
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "100%" }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}
+                  className="pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent"
+                />
+              </div>
+              <div className="relative overflow-hidden rounded-xl border border-emerald-200/50 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-900/50 p-3 sm:p-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-5 w-5 rounded-full bg-emerald-200/80 dark:bg-emerald-800/60 animate-pulse" />
+                  <div className="h-3.5 w-28 rounded bg-slate-200 dark:bg-slate-800 animate-pulse" />
+                </div>
+                <div className="mt-2.5 h-6 w-20 rounded bg-emerald-200/80 dark:bg-emerald-800/70 animate-pulse" />
+                <div className="mt-2 h-3 w-36 rounded bg-slate-200/70 dark:bg-slate-800/50 animate-pulse" />
+                <motion.span
+                  aria-hidden="true"
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "100%" }}
+                  transition={{ duration: 1.4, repeat: Infinity, ease: "linear" }}
+                  className="pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/40 dark:via-white/5 to-transparent"
+                />
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key={`evidence-ready-${activeTopic}`}
+            initial={{ opacity: 0, y: 6, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="mt-4"
+          >
+            {/* The Green Left-Bordered Reassurance Quote */}
+            <p
+              lang={activeLang}
+              className="border-l-2 border-success pl-3 text-xs sm:text-sm leading-relaxed text-muted-foreground break-words"
+            >
+              {reassuranceText}
+            </p>
+
+            {/* The 2 Dynamic Metric Cards with Highlight */}
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {topicData.metrics.map((metric) => (
+                <EvidenceMetricCard
+                  key={metric.id}
+                  metric={metric}
+                  lang={activeLang}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <button
         onClick={handlePlayArbiter}
         disabled={isGenerating}
@@ -403,31 +525,102 @@ export function AiArbiterCard({
   );
 }
 
-function Metric({
-  icon,
-  label,
-  value,
-  note,
-  verified,
+function renderMetricIcon(iconType: EvidenceMetricItem["iconType"]) {
+  switch (iconType) {
+    case "salary":
+      return <TrendingUp className="h-3.5 w-3.5" />;
+    case "placement":
+      return <Users className="h-3.5 w-3.5" />;
+    case "credits":
+      return <GraduationCap className="h-3.5 w-3.5" />;
+    case "safety":
+      return <ShieldCheck className="h-3.5 w-3.5" />;
+    case "environment":
+      return <Building2 className="h-3.5 w-3.5" />;
+    case "demand":
+      return <BarChart3 className="h-3.5 w-3.5" />;
+    case "stipend":
+      return <Award className="h-3.5 w-3.5" />;
+    default:
+      return <TrendingUp className="h-3.5 w-3.5" />;
+  }
+}
+
+function EvidenceMetricCard({
+  metric,
+  lang,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  note: string;
-  verified?: boolean;
+  metric: EvidenceMetricItem;
+  lang: SupportedLanguage;
 }) {
+  const isFocus = metric.isFocus;
+  const labelText = metric.label[lang] || metric.label.en;
+  const valueText = metric.value[lang] || metric.value.en;
+  const noteText = metric.note[lang] || metric.note.en;
+  const badgeText = metric.focusBadge?.[lang] || metric.focusBadge?.en;
+
+  if (isFocus) {
+    return (
+      <div className="relative overflow-hidden rounded-xl border-2 border-emerald-500 bg-gradient-to-br from-emerald-50 via-emerald-50/70 to-teal-50/80 p-3 sm:p-4 shadow-md ring-2 ring-emerald-400/40 dark:border-emerald-400 dark:from-emerald-950/70 dark:via-emerald-900/40 dark:to-teal-950/50 transition-all duration-300">
+        {/* Focus Target Badge Pill */}
+        <div className="mb-2 flex items-center justify-between gap-1">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-xs">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-85" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+            </span>
+            <span>{badgeText || "FOCUS TARGET"}</span>
+          </span>
+          <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="hidden sm:inline">AUDITED</span>
+          </span>
+        </div>
+
+        {/* Title and Icon */}
+        <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-emerald-950 dark:text-emerald-100">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-2xs">
+            {renderMetricIcon(metric.iconType)}
+          </span>
+          <span className="truncate">{labelText}</span>
+        </div>
+
+        {/* Highlighted Value */}
+        <div className="mt-1.5 text-lg font-black text-emerald-800 dark:text-emerald-300 sm:text-xl tracking-tight">
+          {valueText}
+        </div>
+
+        {/* Note / Citation */}
+        <div className="mt-1 text-[11px] leading-snug text-emerald-800/90 dark:text-emerald-300/80 font-medium">
+          {noteText}
+        </div>
+
+        {/* Ambient sweep overlay on mount */}
+        <motion.span
+          aria-hidden="true"
+          initial={{ x: "-120%" }}
+          animate={{ x: "120%" }}
+          transition={{ duration: 1.1, delay: 0.1, ease: "easeInOut" }}
+          className="pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-xl bg-muted p-3 sm:p-4">
-      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-        {icon}
-        {label}
+    <div className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-slate-50/80 p-3 sm:p-4 text-slate-700 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-300 transition-all duration-300">
+      <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200/80 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          {renderMetricIcon(metric.iconType)}
+        </span>
+        <span className="truncate">{labelText}</span>
       </div>
-      <div
-        className={`mt-1 text-lg font-bold sm:text-xl ${verified ? "text-emerald-700" : "text-navy"}`}
-      >
-        {value}
+      <div className="mt-1.5 text-lg font-bold text-navy dark:text-slate-100 sm:text-xl">
+        {valueText}
       </div>
-      <div className="mt-1 text-xs text-muted-foreground">{note}</div>
+      <div className="mt-1 text-[11px] leading-snug text-muted-foreground">
+        {noteText}
+      </div>
     </div>
   );
 }
