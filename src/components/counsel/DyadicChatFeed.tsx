@@ -52,8 +52,7 @@ export function DyadicChatFeed({
 
   return (
     <div
-      data-tour="tour-chat-feed"
-      className="mx-auto max-w-5xl space-y-5 px-4 py-6"
+      className="space-y-4"
       aria-live="off"
     >
       <AnimatePresence initial={false}>

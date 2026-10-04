@@ -233,6 +233,9 @@ export function PlatformTour() {
       if (step === 3) {
         // Bottom mic bar: scroll to bottom so top area has maximum clearance
         target.scrollIntoView({ behavior: "smooth", block: "end" });
+      } else if (step === 2) {
+        // Step 2 is the framed scrollable chat feed: align at page top
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         // Content targets: scroll so top starts with clean offset
         const targetTopDoc = target.getBoundingClientRect().top + window.scrollY;
@@ -284,10 +287,10 @@ export function PlatformTour() {
               animate={{ opacity: 1 }}
               className="pointer-events-none fixed z-[61] rounded-3xl border-2 border-amber-500 ring-4 ring-amber-500/35 shadow-[0_0_35px_rgba(232,119,34,0.4)]"
               style={{
-                top: box.top - 8,
-                left: box.left - 8,
-                width: box.width + 16,
-                height: box.height + 16,
+                top: box.top - 4,
+                left: box.left - 4,
+                width: box.width + 8,
+                height: box.height + 8,
               }}
             />
           )}
@@ -423,7 +426,7 @@ export function PlatformTour() {
 }
 
 function SpotlightBackdrop({ box, adminBox }: { box: Box; adminBox?: Box | null }) {
-  const pad = 8;
+  const pad = 4;
   const radius = 24; // Curved corners matching the rounded-3xl / rounded-2xl target
   const x = Math.max(0, box.left - pad);
   const y = Math.max(0, box.top - pad);
