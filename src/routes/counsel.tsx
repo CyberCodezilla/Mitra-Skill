@@ -424,49 +424,15 @@ function Counsel() {
           )}
         </div>
       </section>
-      {/* Scrollable Framed Family Dialogue Feed Window */}
-      <div className="mx-auto max-w-4xl px-3 sm:px-4 py-2 sm:py-3">
-        <div
-          data-tour="tour-chat-feed"
-          tabIndex={0}
-          role="region"
-          aria-label={language === "hi" ? "पारिवारिक परामर्श संवाद" : "Family Dialogue Feed"}
-          className="relative rounded-3xl border-2 border-slate-200/90 bg-white/70 dark:border-slate-800 dark:bg-slate-900/60 shadow-md backdrop-blur-sm overflow-hidden flex flex-col focus:outline-none"
-          style={{
-            maxHeight: "calc(100vh - 275px)",
-            minHeight: "400px",
-          }}
-        >
-          {/* Header Bar with Live Indicator and Scroll Hint */}
-          <div className="shrink-0 flex items-center justify-between px-4 py-2 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-800/90 select-none">
-            <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-black text-slate-800 dark:text-slate-100 tracking-wide uppercase">
-                {language === "hi" ? "पारिवारिक परामर्श संवाद" : "Family Dialogue & Guidance Feed"}
-              </span>
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                • {items.length} {language === "hi" ? "संदेश" : "turns"}
-              </span>
-            </div>
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-              ↕ {language === "hi" ? "संवाद स्क्रॉल करें" : "Scroll to explore"}
-            </span>
-          </div>
-
-          {/* Scrollable Chat Area */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-4 scroll-smooth focus:outline-none [scrollbar-width:thin]">
-            <DyadicChatFeed
-              items={items}
-              lang={language}
-              activity={activity}
-              endRef={endRef}
-              onRoi={() => setModal("roi")}
-              onAlumni={() => setModal("alumni")}
-              onEscalate={() => setInterventionOpen(true)}
-            />
-          </div>
-        </div>
-      </div>
+      <DyadicChatFeed
+        items={items}
+        lang={language}
+        activity={activity}
+        endRef={endRef}
+        onRoi={() => setModal("roi")}
+        onAlumni={() => setModal("alumni")}
+        onEscalate={() => setInterventionOpen(true)}
+      />
       <SimulationBottomBar
         lang={lang}
         busy={busy}

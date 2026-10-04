@@ -128,8 +128,8 @@ export function PlatformTour() {
         });
       } else setAdminBox(null);
 
-      const cardWidth = Math.min(320, window.innerWidth - 32);
-      const cardHeight = dialogRef.current?.offsetHeight || 270;
+      const cardWidth = Math.min(300, window.innerWidth - 32);
+      const cardHeight = dialogRef.current?.offsetHeight || 260;
       const gap = 16;
       const margin = 14;
       const clamp = (value: number, min: number, max: number) =>
@@ -234,8 +234,9 @@ export function PlatformTour() {
         // Bottom mic bar: scroll to bottom so top area has maximum clearance
         target.scrollIntoView({ behavior: "smooth", block: "end" });
       } else if (step === 2) {
-        // Step 2 is the framed scrollable chat feed: align at page top
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        // Step 2 is the Arbiter Card: scroll so it sits right below the subheader
+        const targetTopDoc = target.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: Math.max(0, targetTopDoc - 80), behavior: "smooth" });
       } else {
         // Content targets: scroll so top starts with clean offset
         const targetTopDoc = target.getBoundingClientRect().top + window.scrollY;

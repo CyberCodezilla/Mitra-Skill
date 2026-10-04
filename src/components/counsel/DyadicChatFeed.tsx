@@ -50,15 +50,19 @@ export function DyadicChatFeed({
   const activeLang: SupportedLanguage =
     (language as SupportedLanguage) || (lang as SupportedLanguage) || "hi";
 
+  const hasArbiter = items.some((m) => m.kind === "arbiter");
+
   return (
     <div
-      className="space-y-4"
+      className="mx-auto max-w-5xl space-y-5 px-4 py-6"
       aria-live="off"
+      {...(!hasArbiter ? { "data-tour": "tour-chat-feed" } : {})}
     >
       <AnimatePresence initial={false}>
         {items.map((message) => {
           const messageText =
             message.text[activeLang] || message.text.hi || message.text.en || "";
+          const isArbiter = message.kind === "arbiter";
           return (
             <motion.div
               key={message.id}
@@ -66,6 +70,7 @@ export function DyadicChatFeed({
               initial={{ opacity: 0, scale: 0.99 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ type: "spring", stiffness: 330, damping: 30, mass: 0.85 }}
+              {...(isArbiter ? { "data-tour": "tour-chat-feed" } : {})}
             >
               {message.kind === "arbiter" ? (
                 <AiArbiterCard
