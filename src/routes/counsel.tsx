@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Activity as ActivityIcon, ChevronDown, MapPin, Scale, X } from "lucide-react";
+import { Activity as ActivityIcon, ChevronDown, HeartHandshake, MapPin, Phone, Scale, X } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 import { MOCK_TRADES, getLocalizedTradeName } from "@/data/mockTrades";
 import {
@@ -15,6 +15,7 @@ import { SimulationBottomBar } from "@/components/counsel/SimulationBottomBar";
 import { ParentRoiModal } from "@/components/counsel/ParentRoiModal";
 import { AlumniReelsDrawer } from "@/components/counsel/AlumniReelsDrawer";
 import { CounselorTriageModal } from "@/components/counsel/CounselorTriageModal";
+import { HighDivergenceNoticeModal } from "@/components/counsel/HighDivergenceNoticeModal";
 import { ConsensusMathInspector } from "@/components/counsel/ConsensusMathInspector";
 import { CenterLocatorModal } from "@/components/counsel/CenterLocatorModal";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -79,31 +80,36 @@ const DETAILS_SHOW_LABEL: Record<SupportedLanguage, string> = {
   ta: "தொழில் மற்றும் அமர்வு விவரங்கள்",
 };
 
-const DEADLOCK_NOTICE: Record<SupportedLanguage, { title: string; desc: string; btn: string }> = {
+const DEADLOCK_NOTICE: Record<SupportedLanguage, { title: string; desc: string; btn: string; whyBtn: string }> = {
   en: {
-    title: "Family divergence persists",
-    desc: "Would you like to connect with a verified district ITI counsellor?",
-    btn: "Review demo referral",
+    title: "High Family Divergence Detected",
+    desc: "Sensitive matters like career stigma, female student safety, and wage security need compassionate human guidance.",
+    btn: "Connect Live",
+    whyBtn: "Why Human Counselor?",
   },
   hi: {
-    title: "परिवार की असहमति बनी हुई है",
-    desc: "क्या आप ज़िला ITI के प्रमाणित काउंसलर से बात करना चाहेंगे?",
-    btn: "डेमो रेफ़रल देखें",
+    title: "उच्च पारिवारिक मतभेद चिन्हित",
+    desc: "सामाजिक प्रतिष्ठा, छात्रा सुरक्षा व वेतन सुरक्षा जैसे संवेदनशील मामलों में मानवीय मार्गदर्शन आवश्यक है।",
+    btn: "लाइव बात करें",
+    whyBtn: "काउंसलर क्यों ज़रूरी?",
   },
   mr: {
-    title: "कौटुंबिक मतभेद कायम आहे",
-    desc: "तुम्ही जिल्हा आयटीआय समुपदेशकांशी संपर्क साधू इच्छिता का?",
-    btn: "समुपदेशन संदर्भ पहा",
+    title: "कौटुंबिक मतभेद उच्च पातळीवर",
+    desc: "सामाजिक प्रतिष्ठा, मुलींची सुरक्षा व आर्थिक सुरक्षिततेसारख्या संवेदनशील विषयांसाठी मानवी समुपदेशन आवश्यक आहे.",
+    btn: "थेट बोला",
+    whyBtn: "समुपदेशक का?",
   },
   bn: {
-    title: "পারিবারিক মতপার্থক্য বজায় রয়েছে",
-    desc: "আপনি কি জেলা আইটিআই কাউন্সেলরের সাথে পরামর্শ করতে চান?",
-    btn: "রেফারেল বিবরণ দেখুন",
+    title: "উচ্চ পারিবারিক মতপার্থক্য শনাক্ত",
+    desc: "সামাজিক মর্যাদা, মেয়েদের সুরক্ষা ও আর্থিক নিরাপত্তার মতো সংবেদনশীল বিষয়ে মানবিক পরামর্শ প্রয়োজন।",
+    btn: "লাইভ কথা বলুন",
+    whyBtn: "কাউন্সেলর কেন প্রয়োজন?",
   },
   ta: {
-    title: "குடும்ப கருத்து வேறுபாடு தொடர்கிறது",
-    desc: "மாவட்ட ஐடிஐ சான்றளிக்கப்பட்ட ஆலோசகருடன் பேச விரும்புகிறீர்களா?",
-    btn: "ஆலோசனை பரிந்துரையை காண்க",
+    title: "அதிக குடும்ப கருத்து வேறுபாடு",
+    desc: "சமூக கௌரவம், மாணவிகள் பாதுகாப்பு மற்றும் நிதி பாதுகாப்பு போன்ற உணர்திறன் மிக்க விஷயங்களுக்கு நேரடி மனித ஆலோசனை தேவை.",
+    btn: "நேரடியாக பேசவும்",
+    whyBtn: "ஆலோசகர் ஏன்?",
   },
 };
 
@@ -128,6 +134,8 @@ function Counsel() {
   const [modal, setModal] = useState<"roi" | "alumni" | null>(null);
   const [converged, setConverged] = useState(false);
   const [counselorOpen, setCounselorOpen] = useState(false);
+  const [interventionOpen, setInterventionOpen] = useState(false);
+  const hasAutoIntervened = useRef(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [locatorOpen, setLocatorOpen] = useState(false);
   const [objectionClicks, setObjectionClicks] = useState(0);
@@ -147,7 +155,7 @@ function Counsel() {
     if (trade) setActiveTradeName(trade.trade_name);
   }, [tradeId, setActiveTradeName]);
   useEffect(() => {
-    setCurrentDivergence(converged ? 0.18 : 0.42);
+    setCurrentDivergence(converged ? 0.18 : 0.44);
   }, [converged, tradeId, setCurrentDivergence]);
 
   const animateEvents = useCallback(async (events: DialogueEvent[]) => {
@@ -234,17 +242,49 @@ function Counsel() {
               topic: activeTopic,
             },
           ];
-    setConverged(true);
+
+    if (who === "parent") {
+      setConverged(false);
+      setCurrentDivergence(0.44);
+      setObjectionClicks((count) => {
+        const next = count + 1;
+        if (next >= 2 && !hasAutoIntervened.current) {
+          hasAutoIntervened.current = true;
+          setTimeout(() => {
+            setInterventionOpen(true);
+          }, 3200);
+        }
+        return next;
+      });
+    } else {
+      setConverged(true);
+      setCurrentDivergence(0.18);
+      setObjectionClicks(0);
+    }
+
     void animateEvents(events);
   };
 
   const handleSelectBalancedScenario = useCallback(
     async (scenario: BalancedDyadicTurn) => {
       if (busy) return;
-      setConverged(true);
+
       if (scenario.initiator === "parent") {
-        setObjectionClicks((count) => count + 1);
+        setConverged(false);
+        setCurrentDivergence(0.44);
+        setObjectionClicks((count) => {
+          const next = count + 1;
+          if (next >= 2 && !hasAutoIntervened.current) {
+            hasAutoIntervened.current = true;
+            setTimeout(() => {
+              setInterventionOpen(true);
+            }, 3200);
+          }
+          return next;
+        });
       } else {
+        setConverged(true);
+        setCurrentDivergence(0.18);
         setObjectionClicks(0);
       }
 
@@ -377,7 +417,7 @@ function Counsel() {
                 </span>
                 <span className="flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-navy">
                   <Scale className="h-3.5 w-3.5 text-primary" />
-                  {c.divergenceBadge}: {converged ? "0.18" : "0.42"}
+                  {c.divergenceBadge}: {currentDivergence.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -391,7 +431,7 @@ function Counsel() {
         endRef={endRef}
         onRoi={() => setModal("roi")}
         onAlumni={() => setModal("alumni")}
-        onEscalate={() => setCounselorOpen(true)}
+        onEscalate={() => setInterventionOpen(true)}
       />
       <SimulationBottomBar
         lang={lang}
@@ -401,29 +441,44 @@ function Counsel() {
         onRegularResponse={() => setObjectionClicks(0)}
         onSelectScenario={handleSelectBalancedScenario}
       />
-      {objectionClicks >= 3 && !mobilityExplored && !deadlockDismissed && (
+      {(objectionClicks >= 2 || (!converged && currentDivergence > 0.35)) && !deadlockDismissed && (
         <aside
           role="status"
-          className="fixed bottom-32 right-4 z-40 max-w-sm animate-in slide-in-from-right rounded-2xl border border-amber-300 bg-card p-4 shadow-xl sm:bottom-28 sm:right-6"
+          className="fixed bottom-24 right-3 z-40 max-w-sm sm:max-w-md animate-in slide-in-from-right rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-amber-50 via-white to-orange-50/80 p-4 shadow-2xl dark:border-amber-700 dark:from-slate-900 dark:to-amber-950/30 sm:bottom-28 sm:right-6"
         >
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 rounded-full bg-amber-100 p-2 text-amber-800">
+            <span className="mt-0.5 rounded-full bg-amber-500 p-2 text-white shadow-xs">
               <Scale className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-navy">
-                {DEADLOCK_NOTICE[language]?.title || DEADLOCK_NOTICE.hi.title}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-black text-navy dark:text-amber-200">
+                  {DEADLOCK_NOTICE[language]?.title || DEADLOCK_NOTICE.hi.title}
+                </p>
+                <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-mono font-bold text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+                  Δ {currentDivergence.toFixed(2)}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
                 {DEADLOCK_NOTICE[language]?.desc || DEADLOCK_NOTICE.hi.desc}
               </p>
-              <button
-                type="button"
-                onClick={() => setCounselorOpen(true)}
-                className="mt-3 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition hover:brightness-105"
-              >
-                {DEADLOCK_NOTICE[language]?.btn || DEADLOCK_NOTICE.hi.btn}
-              </button>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInterventionOpen(true)}
+                  className="rounded-lg border border-amber-600/40 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-bold text-amber-900 dark:text-amber-200 transition hover:bg-amber-100/60 shadow-2xs cursor-pointer"
+                >
+                  {DEADLOCK_NOTICE[language]?.whyBtn || DEADLOCK_NOTICE.hi.whyBtn}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCounselorOpen(true)}
+                  className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition hover:brightness-105 cursor-pointer"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                  <span>{DEADLOCK_NOTICE[language]?.btn || DEADLOCK_NOTICE.hi.btn}</span>
+                </button>
+              </div>
             </div>
             <button
               type="button"
@@ -436,12 +491,24 @@ function Counsel() {
           </div>
         </aside>
       )}
+      <HighDivergenceNoticeModal
+        isOpen={interventionOpen}
+        onClose={() => setInterventionOpen(false)}
+        onConnectCounselor={() => {
+          setInterventionOpen(false);
+          setCounselorOpen(true);
+        }}
+        lang={lang}
+        divergence={currentDivergence}
+        conflictThreshold={0.35}
+        tradeName={getLocalizedTradeName(selectedTrade, language)}
+      />
       <CounselorTriageModal
         isOpen={counselorOpen}
         onClose={() => setCounselorOpen(false)}
         lang={lang}
         selectedTradeName={getLocalizedTradeName(selectedTrade, language)}
-        currentDivergence={converged ? 0.18 : 0.42}
+        currentDivergence={currentDivergence}
       />
       <ConsensusMathInspector
         isOpen={inspectorOpen}

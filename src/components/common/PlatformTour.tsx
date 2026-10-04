@@ -127,46 +127,117 @@ export function PlatformTour() {
           height: adminRect.height,
         });
       } else setAdminBox(null);
-      // Keep the explanation panel outside the spotlight. Try each side in
-      // order, then choose the side with the most room if the viewport is tight.
-      const cardWidth = Math.min(380, window.innerWidth - 32);
-      const cardHeight = Math.min(360, window.innerHeight - 32);
-      const gap = 24;
-      const margin = 16;
+
+      const cardWidth = Math.min(320, window.innerWidth - 32);
+      const cardHeight = dialogRef.current?.offsetHeight || 270;
+      const gap = 16;
+      const margin = 14;
       const clamp = (value: number, min: number, max: number) =>
         Math.min(Math.max(value, min), Math.max(min, max));
+
+      // Overlap checking function: true if card would intersect target (plus safety padding)
+      const checkOverlap = (pos: { top: number; left: number }, pad = 8) => {
+        const cardRight = pos.left + cardWidth;
+        const cardBottom = pos.top + cardHeight;
+        return !(
+          cardRight <= rect.left - pad ||
+          pos.left >= rect.right + pad ||
+          cardBottom <= rect.top - pad ||
+          pos.top >= rect.bottom + pad
+        );
+      };
+
       const centeredLeft = clamp(
         rect.left + rect.width / 2 - cardWidth / 2,
         margin,
-        window.innerWidth - cardWidth - margin,
+        window.innerWidth - cardWidth - margin
       );
-      const centeredTop = clamp(
-        rect.top + rect.height / 2 - cardHeight / 2,
-        margin,
-        window.innerHeight - cardHeight - margin,
-      );
-      const candidates = [
-        { top: rect.bottom + gap, left: centeredLeft },
-        { top: rect.top - cardHeight - gap, left: centeredLeft },
-        { top: centeredTop, left: rect.right + gap },
-        { top: centeredTop, left: rect.left - cardWidth - gap },
-      ].map((candidate) => ({
-        top: clamp(candidate.top, margin, window.innerHeight - cardHeight - margin),
-        left: clamp(candidate.left, margin, window.innerWidth - cardWidth - margin),
-      }));
-      const doesNotOverlap = (candidate: { top: number; left: number }) =>
-        candidate.left + cardWidth <= rect.left - gap ||
-        candidate.left >= rect.right + gap ||
-        candidate.top + cardHeight <= rect.top - gap ||
-        candidate.top >= rect.bottom + gap;
-      const selected = candidates.find(doesNotOverlap) ?? candidates[0]!;
-      setCard(selected);
+
+      // Candidate placements prioritized so they NEVER overlap the target
+      const candidates: Array<{ top: number; left: number; side: "right" | "left" | "bottom" | "top" }> = [];
+
+      // Check right side (ideal for desktop when target is centered)
+      const spaceRight = window.innerWidth - (rect.right + 12);
+      if (spaceRight >= cardWidth + margin) {
+        candidates.push({
+          top: clamp(rect.top + 20, margin, window.innerHeight - cardHeight - margin),
+          left: rect.right + 14,
+          side: "right",
+        });
+      }
+
+      // Check left side
+      const spaceLeft = rect.left - 12;
+      if (spaceLeft >= cardWidth + margin) {
+        candidates.push({
+          top: clamp(rect.top + 20, margin, window.innerHeight - cardHeight - margin),
+          left: rect.left - cardWidth - 14,
+          side: "left",
+        });
+      }
+
+      if (step === 3) {
+        // Step 3 (mic bar) is fixed at the bottom: place card ABOVE it!
+        const topAbove = rect.top - cardHeight - gap;
+        candidates.unshift({
+          top: Math.max(margin, topAbove),
+          left: centeredLeft,
+          side: "top",
+        });
+        candidates.push({
+          top: Math.min(window.innerHeight - cardHeight - margin, rect.bottom + gap),
+          left: centeredLeft,
+          side: "bottom",
+        });
+      } else {
+        // Below candidate with viewport auto-scroll guarantee
+        const topBelow = rect.bottom + gap;
+        const maxTop = window.innerHeight - cardHeight - margin;
+        if (topBelow > maxTop) {
+          const deficit = topBelow - maxTop;
+          window.scrollBy({ top: deficit + 12, behavior: "smooth" });
+        }
+        candidates.push({
+          top: Math.max(margin, Math.min(topBelow, maxTop)),
+          left: centeredLeft,
+          side: "bottom",
+        });
+        // Above candidate
+        candidates.push({
+          top: Math.max(margin, rect.top - cardHeight - gap),
+          left: centeredLeft,
+          side: "top",
+        });
+      }
+
+      // Filter out candidates that overlap the target
+      const nonOverlapping = candidates.filter((c) => !checkOverlap(c));
+
+      // Pick first non-overlapping candidate or safe fallback
+      const chosen = nonOverlapping[0] ?? candidates[0]!;
+      setCard({
+        top: clamp(chosen.top, margin, window.innerHeight - cardHeight - margin),
+        left: clamp(chosen.left, margin, window.innerWidth - cardWidth - margin),
+      });
     };
+
     animation = window.requestAnimationFrame(() => {
       const target = current.target
         ? document.querySelector<HTMLElement>(`[data-tour="${current.target}"]`)
         : null;
-      if (step !== 5) target?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (!target) {
+        setBox(null);
+        setAdminBox(null);
+        return;
+      }
+      if (step === 3) {
+        // Bottom mic bar: scroll to bottom so top area has maximum clearance
+        target.scrollIntoView({ behavior: "smooth", block: "end" });
+      } else {
+        // Content targets: scroll so top starts with clean offset
+        const targetTopDoc = target.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: Math.max(0, targetTopDoc - 75), behavior: "smooth" });
+      }
       window.setTimeout(measure, 320);
     });
     window.addEventListener("resize", measure);
@@ -197,7 +268,7 @@ export function PlatformTour() {
       {isOpen && (
         <>
           {box ? (
-            <SpotlightBackdrop box={box} />
+            <SpotlightBackdrop box={box} adminBox={adminBox} />
           ) : (
             <motion.div
               initial={{ opacity: 0 }}
@@ -211,12 +282,12 @@ export function PlatformTour() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="pointer-events-none fixed z-[61] rounded-2xl ring-4 ring-amber-500 ring-offset-4 ring-offset-slate-900 shadow-[0_0_50px_rgba(232,119,34,0.5)]"
+              className="pointer-events-none fixed z-[61] rounded-3xl border-2 border-amber-500 ring-4 ring-amber-500/35 shadow-[0_0_35px_rgba(232,119,34,0.4)]"
               style={{
-                top: box.top - 5,
-                left: box.left - 5,
-                width: box.width + 10,
-                height: box.height + 10,
+                top: box.top - 8,
+                left: box.left - 8,
+                width: box.width + 16,
+                height: box.height + 16,
               }}
             />
           )}
@@ -224,12 +295,12 @@ export function PlatformTour() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="pointer-events-none fixed z-[61] rounded-full ring-4 ring-amber-500 ring-offset-4 ring-offset-slate-900 shadow-[0_0_50px_rgba(232,119,34,0.5)]"
+              className="pointer-events-none fixed z-[61] rounded-2xl ring-4 ring-amber-500 ring-offset-4 ring-offset-slate-900 shadow-[0_0_30px_rgba(232,119,34,0.5)]"
               style={{
-                top: adminBox.top - 5,
-                left: adminBox.left - 5,
-                width: adminBox.width + 10,
-                height: adminBox.height + 10,
+                top: adminBox.top - 6,
+                left: adminBox.left - 6,
+                width: adminBox.width + 12,
+                height: adminBox.height + 12,
               }}
             />
           )}
@@ -243,73 +314,107 @@ export function PlatformTour() {
             initial={{ opacity: 0, y: 14, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8 }}
-            className={`fixed z-[62] w-[calc(100vw-2rem)] max-w-[380px] rounded-2xl border border-slate-200 bg-white p-5 text-slate-800 shadow-2xl outline-none ${box ? "" : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"}`}
+            className={`fixed z-[62] w-[calc(100vw-2rem)] max-w-[330px] overflow-hidden rounded-3xl border border-slate-200/90 bg-white text-slate-800 shadow-2xl dark:border-slate-800 dark:bg-slate-900 outline-none backdrop-blur-md ${box ? "" : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"}`}
             {...(box ? { style: { top: card.top, left: card.left } } : {})}
           >
-            <div className="absolute inset-x-0 top-0 h-1 overflow-hidden rounded-t-2xl bg-slate-100">
+            {/* Seamless Top Progress Bar */}
+            <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-amber-500 to-emerald-500"
-                animate={{ width: `${((step + 1) / 6) * 100}%` }}
+                className="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-500"
+                initial={false}
+                animate={{ width: `${((step + 1) / steps.length) * 100}%` }}
+                transition={{ duration: 0.35, ease: "easeInOut" }}
               />
             </div>
-            <div className="flex items-center justify-between gap-2 pt-1">
-              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800">
-                {hi ? `चरण ${step + 1} / 6` : `Step ${step + 1} of 6`}
-              </span>
-              <button
-                onClick={() => close(false)}
-                className="rounded-lg p-1 text-slate-500 hover:bg-slate-100"
-                aria-label={hi ? "बंद करें" : "Close tour"}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="mt-3 flex h-10 w-10 items-center justify-center rounded-xl bg-navy text-white">
-              {step === 0 ? (
-                <Handshake className="h-5 w-5" />
-              ) : step === 5 ? (
-                <ShieldCheck className="h-5 w-5" />
-              ) : (
-                <Rocket className="h-5 w-5" />
-              )}
-            </div>
-            <h2 id="tour-title" className="mt-3 text-lg font-bold text-navy">
-              {current.title[lang]}
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{current.body[lang]}</p>
-            {false ? (
-              <button
-                onClick={() => move(1)}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#E87722] px-4 py-3 font-semibold text-white"
-              >
-                {hi ? "यात्रा शुरू करें" : "Start Guided Tour"}
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            ) : (
-              <div className="mt-5 flex items-center justify-between gap-2">
+
+            <div className="p-4 pt-3.5 sm:p-5 sm:pt-4">
+              {/* Header: Step Badge + Segmented Pills + Percentage + Close */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-900 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 shadow-2xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    {hi ? `चरण ${step + 1} / ${steps.length}` : `Step ${step + 1} of ${steps.length}`}
+                  </span>
+                  
+                  {/* Segmented Dash Pills */}
+                  <div className="flex items-center gap-1" aria-hidden="true">
+                    {steps.map((_, i) => (
+                      <span
+                        key={i}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                          i === step
+                            ? "w-3.5 bg-gradient-to-r from-amber-500 to-orange-500"
+                            : i < step
+                            ? "w-2 bg-emerald-500"
+                            : "w-1.5 bg-slate-200 dark:bg-slate-700"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono font-bold text-slate-400 dark:text-slate-500">
+                    {Math.round(((step + 1) / steps.length) * 100)}%
+                  </span>
+                  <button
+                    onClick={() => close(false)}
+                    className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition active:scale-95 cursor-pointer"
+                    aria-label={hi ? "बंद करें" : "Close tour"}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Icon */}
+              <div className="mt-3 flex h-9 w-9 items-center justify-center rounded-xl bg-navy text-white shadow-sm shadow-navy/20">
+                {step === 0 ? (
+                  <Handshake className="h-4 w-4" />
+                ) : step === 5 ? (
+                  <ShieldCheck className="h-4 w-4" />
+                ) : (
+                  <Rocket className="h-4 w-4" />
+                )}
+              </div>
+
+              {/* Title & Body */}
+              <h2 id="tour-title" className="mt-2.5 text-base sm:text-lg font-bold text-navy dark:text-slate-100 leading-snug">
+                {current.title[lang]}
+              </h2>
+              <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                {current.body[lang]}
+              </p>
+
+              {/* Action Buttons */}
+              <div className="mt-4 flex items-center justify-between gap-2">
                 <button
+                  type="button"
                   onClick={() => move(step - 1)}
                   disabled={step === 0}
-                  className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-35"
+                  className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition disabled:cursor-not-allowed disabled:opacity-30 cursor-pointer active:scale-95"
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-3.5 w-3.5" />
                   {hi ? "पीछे" : "Back"}
                 </button>
                 <button
+                  type="button"
                   onClick={() => move(step + 1)}
-                  className="inline-flex items-center gap-1 rounded-xl bg-navy px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#153b62]"
+                  className="inline-flex items-center gap-1 rounded-xl bg-navy px-3.5 py-2 text-xs sm:text-sm font-bold text-white shadow-md shadow-navy/20 hover:bg-[#153b62] transition active:scale-95 cursor-pointer"
                 >
-                  {step === 5 ? (hi ? "समाप्त" : "Finish") : hi ? "अगला" : "Next"}
-                  <ArrowRight className="h-4 w-4" />
+                  <span>{step === 5 ? (hi ? "समाप्त" : "Finish") : hi ? "अगला" : "Next"}</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </div>
-            )}
-            <button
-              onClick={() => close(false)}
-              className="mt-2 w-full py-1 text-xs text-slate-400 hover:text-slate-600"
-            >
-              {hi ? "यात्रा छोड़ें" : "Skip Tour"}
-            </button>
+
+              <button
+                type="button"
+                onClick={() => close(false)}
+                className="mt-2 w-full py-1 text-center text-[11px] font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition cursor-pointer"
+              >
+                {hi ? "यात्रा छोड़ें" : "Skip Tour"}
+              </button>
+            </div>
           </motion.section>
         </>
       )}
@@ -317,47 +422,59 @@ export function PlatformTour() {
   );
 }
 
-function SpotlightBackdrop({ box }: { box: Box }) {
-  const pad = 12;
-  const top = Math.max(0, box.top - pad);
-  const left = Math.max(0, box.left - pad);
-  const right = Math.min(window.innerWidth, box.left + box.width + pad);
-  const bottom = Math.min(window.innerHeight, box.top + box.height + pad);
-  const className = "pointer-events-none fixed z-[60] bg-slate-950/75 backdrop-blur-sm";
+function SpotlightBackdrop({ box, adminBox }: { box: Box; adminBox?: Box | null }) {
+  const pad = 8;
+  const radius = 24; // Curved corners matching the rounded-3xl / rounded-2xl target
+  const x = Math.max(0, box.left - pad);
+  const y = Math.max(0, box.top - pad);
+  const w = box.width + pad * 2;
+  const h = box.height + pad * 2;
+
   return (
-    <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className={className}
-        style={{ top: 0, left: 0, right: 0, height: top }}
-        aria-hidden="true"
+    <motion.svg
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="pointer-events-none fixed inset-0 z-[60] h-full w-full"
+      aria-hidden="true"
+    >
+      <defs>
+        <mask id="mitraskill-tour-curved-mask">
+          {/* Entire screen opaque white */}
+          <rect x="0" y="0" width="100%" height="100%" fill="white" />
+          {/* Curved corner rectangle cutout for primary target */}
+          <rect
+            x={x}
+            y={y}
+            width={w}
+            height={h}
+            rx={radius}
+            ry={radius}
+            fill="black"
+          />
+          {/* Secondary target (e.g. admin link in step 5) */}
+          {adminBox && (
+            <rect
+              x={adminBox.left - 6}
+              y={adminBox.top - 6}
+              width={adminBox.width + 12}
+              height={adminBox.height + 12}
+              rx={16}
+              ry={16}
+              fill="black"
+            />
+          )}
+        </mask>
+      </defs>
+      {/* Dark overlay masked by curved rectangle */}
+      <rect
+        x="0"
+        y="0"
+        width="100%"
+        height="100%"
+        fill="rgba(15, 23, 42, 0.78)"
+        mask="url(#mitraskill-tour-curved-mask)"
       />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className={className}
-        style={{ top: bottom, left: 0, right: 0, bottom: 0 }}
-        aria-hidden="true"
-      />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className={className}
-        style={{ top, bottom: window.innerHeight - bottom, left: 0, width: left }}
-        aria-hidden="true"
-      />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className={className}
-        style={{ top, bottom: window.innerHeight - bottom, left: right, right: 0 }}
-        aria-hidden="true"
-      />
-    </>
+    </motion.svg>
   );
 }

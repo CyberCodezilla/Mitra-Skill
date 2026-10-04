@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Award,
   ArrowRight,
   BarChart3,
@@ -13,6 +14,7 @@ import {
   GraduationCap,
   HeartHandshake,
   MapPin,
+  PhoneCall,
   Scale,
   ShieldCheck,
   TrendingUp,
@@ -272,6 +274,34 @@ const COUNSEL_UI_STRINGS = {
     mr: "✔ सामंजस्य सूत्र",
     bn: "✔ ভারসাম্য ফর্মুলা",
     ta: "✔ சமரச தீர்வு",
+  },
+  sensitiveMatterTitle: {
+    en: "Unsatisfied or dealing with sensitive family hesitation?",
+    hi: "इस उत्तर से असंतुष्ट हैं या संवेदनशील पारिवारिक संकोच है?",
+    mr: "या उत्तराने समाधानी नाही किंवा संवेदनशील कौटुंबिक चिंता आहे?",
+    bn: "উত্তরে অসন্তুষ্ট বা সংবেদনশীল পারিবারিক দ্বিধা রয়েছে?",
+    ta: "பதிலில் திருப்தி இல்லையா அல்லது குடும்ப தயக்கம் உள்ளதா?",
+  },
+  sensitiveBadge: {
+    en: "Human Guidance Recommended",
+    hi: "मानवीय मार्गदर्शन अनुशंसित",
+    mr: "मानवी समुपदेशन आवश्यक",
+    bn: "মানবিক পরামর্শ বাঞ্ছনীয়",
+    ta: "நேரடி மனித ஆலோசனை தேவை",
+  },
+  sensitiveMatterDesc: {
+    en: "Matters of career stigma, financial pressure, or female safety need compassionate human guidance.",
+    hi: "सामाजिक प्रतिष्ठा, घरेलू आर्थिक दबाव या छात्रा सुरक्षा जैसे संवेदनशील मामलों में अनुभवी ज़िला काउंसलर से सीधा संवाद सर्वोत्तम समाधान है।",
+    mr: "सामाजिक प्रतिष्ठा, आर्थिक अडचणी किंवा मुलींच्या सुरक्षेसाठी अनुभवी जिल्हा समुपदेशकांशी थेट संवाद सर्वोत्तम ठरतो.",
+    bn: "সামাজিক মর্যাদা, আর্থিক চাপ বা মেয়েদের সুরক্ষার মতো স্পর্শকাতর বিষয়ে অভিজ্ঞ কাউন্সেলরের সাথে সরাসরি কথা বলাই শ্রেয়।",
+    ta: "சமூக கௌரவம், நிதிச்சுமை அல்லது மாணவிகள் பாதுகாப்புக்கு அனுபவம் வாய்ந்த மாவட்ட ஆலோசகரின் நேரடி உரையாடல் மிக சிறந்தது.",
+  },
+  unsatisfiedBtn: {
+    en: "Talk to Live ITI Counselor",
+    hi: "लाइव ITI काउंसलर से बात करें",
+    mr: "थेट आयटीआय समुपदेशकांशी बोला",
+    bn: "লাইভ আইটিআই কাউন্সেলরের সাথে কথা বলুন",
+    ta: "நேரடி ஐடிஐ ஆலோசகருடன் பேசவும்",
   },
 };
 
@@ -838,6 +868,35 @@ export function AiArbiterCard({
           {isSpeaking && currentSpeakingPersona === "arbiter"
             ? statusText.speakingStop
             : `🔊 ${c.audioBtn}`}
+        </button>
+      </div>
+
+      {/* Sensitive Matter / Unsatisfied Escalation Callout */}
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-amber-300/80 bg-gradient-to-r from-amber-50/90 via-orange-50/40 to-amber-50/90 p-3 sm:p-4 text-xs dark:border-amber-900/60 dark:bg-amber-950/25">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+            <HeartHandshake className="h-5 w-5" />
+          </span>
+          <div>
+            <div className="font-bold text-slate-900 dark:text-slate-100 flex flex-wrap items-center gap-2">
+              <span className="text-xs sm:text-sm">{COUNSEL_UI_STRINGS.sensitiveMatterTitle[activeLang] || COUNSEL_UI_STRINGS.sensitiveMatterTitle.hi}</span>
+              <span className="rounded-full bg-amber-200/90 dark:bg-amber-900/80 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:text-amber-200 uppercase tracking-wider">
+                {COUNSEL_UI_STRINGS.sensitiveBadge[activeLang] || COUNSEL_UI_STRINGS.sensitiveBadge.hi}
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+              {COUNSEL_UI_STRINGS.sensitiveMatterDesc[activeLang] || COUNSEL_UI_STRINGS.sensitiveMatterDesc.hi}
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onEscalate}
+          disabled={isGenerating}
+          className="shrink-0 flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-2.5 font-black text-white shadow-md hover:from-amber-700 hover:to-orange-700 transition active:scale-95 cursor-pointer text-xs"
+        >
+          <PhoneCall className="h-4 w-4" />
+          <span>{COUNSEL_UI_STRINGS.unsatisfiedBtn[activeLang] || COUNSEL_UI_STRINGS.unsatisfiedBtn.hi}</span>
         </button>
       </div>
 
